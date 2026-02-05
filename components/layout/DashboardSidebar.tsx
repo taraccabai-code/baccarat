@@ -50,11 +50,11 @@ const menuItems: MenuItem[] = [
     icon: <LayoutDashboard className="w-4 h-4" />,
   },
   {
-    title: "Trade",
+    title: "Baccarat",
     icon: <Server className="w-4 h-4" />,
     children: [
-      { title: "Make Money", href: "/dashboard/trade/make-money" },
-      { title: "Trade History", href: "/dashboard/trade/history" },
+      { title: "Play Baccarat", href: "/dashboard/trade/play-baccarat" },
+      { title: "Play History", href: "/dashboard/trade/history" },
     ],
   },
   {
@@ -65,20 +65,11 @@ const menuItems: MenuItem[] = [
     ],
   },
   {
-    title: "Trading Accounts",
+    title: "Baccarat Accounts",
     icon: <CreditCard className="w-4 h-4" />,
     children: [
-      { title: "Funder Accounts", href: "/dashboard/trading-accounts/funder-accounts" },
       { title: "Account Credentials", href: "/dashboard/trading-accounts/credentials" },
       { title: "User Accounts", href: "/dashboard/trading-accounts/user-accounts" },
-    ],
-  },
-  {
-    title: "Funders",
-    icon: <Users className="w-4 h-4" />,
-    children: [
-      { title: "Funders", href: "/dashboard/funders" },
-      { title: "Funders Packages", href: "/dashboard/funders/packages" },
     ],
   },
 ];
