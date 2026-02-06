@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Search, ChevronDown } from "lucide-react"
+import { Search, ChevronDown, ArrowUpDown } from "lucide-react"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -135,12 +135,42 @@ const PlayBacarratPage = () => {
                         <Table>
                             <TableHeader className="bg-[#0a0a0a]">
                                 <TableRow className="border-gray-800 hover:bg-transparent">
-                                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">Units</TableHead>
-                                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">Level</TableHead>
-                                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">Pattern</TableHead>
-                                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">Status</TableHead>
-                                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">Target Profit</TableHead>
-                                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">User Balance</TableHead>
+                                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
+                                        <div className="flex items-center justify-center gap-1">
+                                            <span>Units</span>
+                                            <ArrowUpDown className="h-3 w-3 text-gray-500 cursor-pointer" />
+                                        </div>
+                                    </TableHead>
+                                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
+                                        <div className="flex items-center justify-center gap-1">
+                                            <span>Status</span>
+                                            <ArrowUpDown className="h-3 w-3 text-gray-500 cursor-pointer" />
+                                        </div>
+                                    </TableHead>
+                                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
+                                        <div className="flex items-center justify-center gap-1">
+                                            <span>User Balance</span>
+                                            <ArrowUpDown className="h-3 w-3 text-gray-500 cursor-pointer" />
+                                        </div>
+                                    </TableHead>
+                                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
+                                        <div className="flex items-center justify-center gap-1">
+                                            <span>Level</span>
+                                            <ArrowUpDown className="h-3 w-3 text-gray-500 cursor-pointer" />
+                                        </div>
+                                    </TableHead>
+                                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
+                                        <div className="flex items-center justify-center gap-1">
+                                            <span>Pattern</span>
+                                            <ArrowUpDown className="h-3 w-3 text-gray-500 cursor-pointer" />
+                                        </div>
+                                    </TableHead>
+                                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
+                                        <div className="flex items-center justify-center gap-1">
+                                            <span>Target Profit</span>
+                                            <ArrowUpDown className="h-3 w-3 text-gray-500 cursor-pointer" />
+                                        </div>
+                                    </TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
