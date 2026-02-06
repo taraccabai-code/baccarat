@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
     Select,
     SelectContent,
@@ -26,8 +26,39 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+type BaccaratRow = {
+    id: number | string
+    level: number | null
+    pattern: string | null
+    target_profit: number | null
+    actions: string | null
+}
+
 const PlayBacarratPage = () => {
     const [selectedFilter, setSelectedFilter] = useState("All")
+    const [rows, setRows] = useState<BaccaratRow[]>([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+
+    useEffect(() => {
+        const load = async () => {
+            try {
+                const res = await fetch("/api/baccarat/units")
+                if (!res.ok) {
+                    throw new Error("Failed to load data")
+                }
+                const data: BaccaratRow[] = await res.json()
+                setRows(data)
+            } catch (err: any) {
+                console.error("Error fetching baccarat data:", err)
+                setError("Failed to load data")
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        load()
+    }, [])
 
     return (
         <div className="w-full h-full p-6">
@@ -174,11 +205,58 @@ const PlayBacarratPage = () => {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                <TableRow className="border-gray-800">
-                                    <TableCell colSpan={6} className="text-center text-gray-500 h-32 italic">
-                                        No active units found.
-                                    </TableCell>
-                                </TableRow>
+                                {loading && (
+                                    <TableRow className="border-gray-800">
+                                        <TableCell colSpan={6} className="text-center text-gray-500 h-32 italic">
+                                            Loading data...
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+
+                                {!loading && error && (
+                                    <TableRow className="border-gray-800">
+                                        <TableCell colSpan={6} className="text-center text-red-500 h-32 italic">
+                                            {error}
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+
+                                {!loading && !error && rows.length === 0 && (
+                                    <TableRow className="border-gray-800">
+                                        <TableCell colSpan={6} className="text-center text-gray-500 h-32 italic">
+                                            No active units found.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+
+                                {!loading && !error && rows.map((row) => (
+                                    <TableRow key={row.id} className="border-gray-800">
+                                        {/* Units */}
+                                        <TableCell className="text-center text-gray-200 text-xs">
+                                            {/* intentionally left empty */}
+                                        </TableCell>
+                                        {/* Status */}
+                                        <TableCell className="text-center text-gray-200 text-xs">
+                                            {/* intentionally left empty */}
+                                        </TableCell>
+                                        {/* User Balance */}
+                                        <TableCell className="text-center text-gray-200 text-xs">
+                                            {/* intentionally left empty */}
+                                        </TableCell>
+                                        {/* Level */}
+                                        <TableCell className="text-center text-gray-200 text-xs">
+                                            {row.level ?? ""}
+                                        </TableCell>
+                                        {/* Pattern */}
+                                        <TableCell className="text-center text-gray-200 text-xs">
+                                            {row.pattern ?? ""}
+                                        </TableCell>
+                                        {/* Target Profit */}
+                                        <TableCell className="text-center text-gray-200 text-xs">
+                                            {row.target_profit ?? ""}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
                             </TableBody>
                         </Table>
                     </div>
