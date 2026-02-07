@@ -8,31 +8,16 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Search, ChevronDown, ArrowUpDown } from "lucide-react"
+import { Search, ChevronDown } from "lucide-react"
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-
-type BaccaratRow = {
-    id: number | string
-    level: number | null
-    pattern: string | null
-    target_profit: number | null
-    actions: string | null
-}
+import { PlayBaccaratTable, type BaccaratRow } from "@/components/tables/play_baccarat"
 
 const PlayBacarratPage = () => {
     const [selectedFilter, setSelectedFilter] = useState("All")
@@ -162,104 +147,7 @@ const PlayBacarratPage = () => {
                         </div>
                     </div>
 
-                    <div className="border rounded-md border-gray-800 overflow-hidden">
-                        <Table>
-                            <TableHeader className="bg-[#0a0a0a]">
-                                <TableRow className="border-gray-800 hover:bg-transparent">
-                                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
-                                        <div className="flex items-center justify-center gap-1">
-                                            <span>Units</span>
-                                            <ArrowUpDown className="h-3 w-3 text-gray-500 cursor-pointer" />
-                                        </div>
-                                    </TableHead>
-                                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
-                                        <div className="flex items-center justify-center gap-1">
-                                            <span>Status</span>
-                                            <ArrowUpDown className="h-3 w-3 text-gray-500 cursor-pointer" />
-                                        </div>
-                                    </TableHead>
-                                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
-                                        <div className="flex items-center justify-center gap-1">
-                                            <span>User Balance</span>
-                                            <ArrowUpDown className="h-3 w-3 text-gray-500 cursor-pointer" />
-                                        </div>
-                                    </TableHead>
-                                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
-                                        <div className="flex items-center justify-center gap-1">
-                                            <span>Level</span>
-                                            <ArrowUpDown className="h-3 w-3 text-gray-500 cursor-pointer" />
-                                        </div>
-                                    </TableHead>
-                                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
-                                        <div className="flex items-center justify-center gap-1">
-                                            <span>Pattern</span>
-                                            <ArrowUpDown className="h-3 w-3 text-gray-500 cursor-pointer" />
-                                        </div>
-                                    </TableHead>
-                                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
-                                        <div className="flex items-center justify-center gap-1">
-                                            <span>Target Profit</span>
-                                            <ArrowUpDown className="h-3 w-3 text-gray-500 cursor-pointer" />
-                                        </div>
-                                    </TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {loading && (
-                                    <TableRow className="border-gray-800">
-                                        <TableCell colSpan={6} className="text-center text-gray-500 h-32 italic">
-                                            Loading data...
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-
-                                {!loading && error && (
-                                    <TableRow className="border-gray-800">
-                                        <TableCell colSpan={6} className="text-center text-red-500 h-32 italic">
-                                            {error}
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-
-                                {!loading && !error && rows.length === 0 && (
-                                    <TableRow className="border-gray-800">
-                                        <TableCell colSpan={6} className="text-center text-gray-500 h-32 italic">
-                                            No active units found.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-
-                                {!loading && !error && rows.map((row) => (
-                                    <TableRow key={row.id} className="border-gray-800">
-                                        {/* Units */}
-                                        <TableCell className="text-center text-gray-200 text-xs">
-                                            {/* intentionally left empty */}
-                                        </TableCell>
-                                        {/* Status */}
-                                        <TableCell className="text-center text-gray-200 text-xs">
-                                            {/* intentionally left empty */}
-                                        </TableCell>
-                                        {/* User Balance */}
-                                        <TableCell className="text-center text-gray-200 text-xs">
-                                            {/* intentionally left empty */}
-                                        </TableCell>
-                                        {/* Level */}
-                                        <TableCell className="text-center text-gray-200 text-xs">
-                                            {row.level ?? ""}
-                                        </TableCell>
-                                        {/* Pattern */}
-                                        <TableCell className="text-center text-gray-200 text-xs">
-                                            {row.pattern ?? ""}
-                                        </TableCell>
-                                        {/* Target Profit */}
-                                        <TableCell className="text-center text-gray-200 text-xs">
-                                            {row.target_profit ?? ""}
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
+                    <PlayBaccaratTable data={rows} loading={loading} error={error} />
                 </div>
             </div>
         </div>
