@@ -24,7 +24,7 @@ import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Row from "@/components/ui/row"
-import PlayIcon from "@/components/ui/playicon"
+import PlayIcon from "@/components/ui/playicon"s
 
 import { TradeStatus } from "@/types/paired"
 
