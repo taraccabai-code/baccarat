@@ -21,6 +21,7 @@ export type BaccaratRow = {
     units?: string | null
     status?: string | null
     user_balance?: number | string | null
+    bet_size?: number | string | null
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -58,17 +59,20 @@ interface PlayBaccaratTableProps {
 const clampLevel = (n: number | null | undefined) =>
     Math.min(15, Math.max(1, Number(n) || 1))
 
-const PATTERN_FORMAT = /^[BTP]{4}-[BTP]{4}$/
-const DEFAULT_PATTERN = "BBBB-BBBB"
+const DEFAULT_PATTERN = ""
 
-function formatPatternInput(raw: string): string {
-    const letters = raw.toUpperCase().replace(/[^BTP]/g, "").slice(0, 8)
-    if (letters.length <= 4) return letters
-    return letters.slice(0, 4) + "-" + letters.slice(4, 8)
-}
+function formatPatternInput(raw: string, maxLetters = 15): string {
+    const letters = raw
+        .toUpperCase()
+        .replace(/[^BTP]/g, "")
+        .slice(0, maxLetters)
+    if (!letters.length) return ""
 
-function isValidPattern(s: string): boolean {
-    return PATTERN_FORMAT.test(s)
+    const groups: string[] = []
+    for (let i = 0; i < letters.length; i += 4) {
+        groups.push(letters.slice(i, i + 4))
+    }
+    return groups.join("-")
 }
 
 export const PlayBaccaratTable = ({ data, loading, error }: PlayBaccaratTableProps) => {
@@ -78,6 +82,9 @@ export const PlayBaccaratTable = ({ data, loading, error }: PlayBaccaratTablePro
     const [patternByRowId, setPatternByRowId] = useState<Record<string, string>>({})
     const [editingPatternRowId, setEditingPatternRowId] = useState<string | null>(null)
     const [editingPatternValue, setEditingPatternValue] = useState("")
+    const [targetProfitByRowId, setTargetProfitByRowId] = useState<Record<string, string>>({})
+    const [editingTargetProfitRowId, setEditingTargetProfitRowId] = useState<string | null>(null)
+    const [editingTargetProfitValue, setEditingTargetProfitValue] = useState("")
     const displayRows = INCLUDE_DUMMY_ROW ? [DUMMY_ROW, ...data] : data
 
     const getLevel = useCallback(
@@ -117,11 +124,24 @@ export const PlayBaccaratTable = ({ data, loading, error }: PlayBaccaratTablePro
         (row: BaccaratRow) => {
             const parsed = parseInt(editingLevelValue, 10)
             const clamped = Number.isNaN(parsed) ? clampLevel(row.level) : clampLevel(parsed)
+
+            // When Level changes, clear the pattern for this row
             setLevel(row.id, clamped)
+            setPatternByRowId((prev) => ({ ...prev, [String(row.id)]: "" }))
+            if (editingPatternRowId === String(row.id)) {
+                setEditingPatternRowId(null)
+                setEditingPatternValue("")
+            }
+
             setEditingLevelRowId(null)
             setEditingLevelValue("")
         },
-        [editingLevelValue, setLevel]
+        [
+            editingLevelValue,
+            editingPatternRowId,
+            setLevel,
+            setPatternByRowId,
+        ]
     )
 
     const getPattern = useCallback(
@@ -145,19 +165,92 @@ export const PlayBaccaratTable = ({ data, loading, error }: PlayBaccaratTablePro
         [getPattern]
     )
 
-    const handlePatternChange = useCallback((raw: string) => {
-        setEditingPatternValue(formatPatternInput(raw))
-    }, [])
+    const handlePatternChange = useCallback(
+        (row: BaccaratRow, raw: string) => {
+            const level = getLevel(row)
+            setEditingPatternValue(formatPatternInput(raw, level))
+        },
+        [getLevel]
+    )
 
     const handlePatternBlur = useCallback(
         (row: BaccaratRow) => {
-            const value = editingPatternValue.trim()
-            const final = isValidPattern(value) ? value : getPattern(row)
-            setPattern(row.id, final)
+            const formatted = formatPatternInput(editingPatternValue.trim())
+            const lettersOnly = formatted.replace(/-/g, "")
+
+            if (!lettersOnly.length) {
+                // Empty pattern: clear pattern, keep current level
+                setPattern(row.id, "")
+            } else {
+                const newLevel = clampLevel(lettersOnly.length)
+                const trimmed = lettersOnly.slice(0, newLevel)
+
+                const groups: string[] = []
+                for (let i = 0; i < trimmed.length; i += 4) {
+                    groups.push(trimmed.slice(i, i + 4))
+                }
+                const finalPattern = groups.join("-")
+
+                // When Pattern changes, Level adjusts to match its length
+                setPattern(row.id, finalPattern)
+                setLevel(row.id, newLevel)
+                // If Level is currently being edited for this row, close its edit state
+                if (editingLevelRowId === String(row.id)) {
+                    setEditingLevelRowId(null)
+                    setEditingLevelValue("")
+                }
+            }
+
             setEditingPatternRowId(null)
             setEditingPatternValue("")
         },
-        [editingPatternValue, getPattern, setPattern]
+        [
+            editingPatternValue,
+            editingLevelRowId,
+            setLevel,
+            setPattern,
+        ]
+    )
+
+    const getTargetProfit = useCallback(
+        (row: BaccaratRow) => {
+            const id = String(row.id)
+            if (id in targetProfitByRowId) return targetProfitByRowId[id]
+            return row.target_profit != null ? String(row.target_profit) : ""
+        },
+        [targetProfitByRowId]
+    )
+
+    const handleTargetProfitFocus = useCallback(
+        (row: BaccaratRow) => {
+            const id = String(row.id)
+            setEditingTargetProfitRowId(id)
+            setEditingTargetProfitValue(getTargetProfit(row))
+        },
+        [getTargetProfit]
+    )
+
+    const handleTargetProfitChange = useCallback((raw: string) => {
+        // Only allow digits; strip everything else
+        const digitsOnly = raw.replace(/\D/g, "")
+        setEditingTargetProfitValue(digitsOnly)
+    }, [])
+
+    const handleTargetProfitBlur = useCallback(
+        (row: BaccaratRow) => {
+            const id = String(row.id)
+            const trimmed = editingTargetProfitValue.trim()
+            const digitsOnly = trimmed.replace(/\D/g, "")
+
+            setTargetProfitByRowId((prev) => ({
+                ...prev,
+                [id]: digitsOnly,
+            }))
+
+            setEditingTargetProfitRowId(null)
+            setEditingTargetProfitValue("")
+        },
+        [editingTargetProfitValue]
     )
 
     return (
@@ -174,6 +267,12 @@ export const PlayBaccaratTable = ({ data, loading, error }: PlayBaccaratTablePro
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
                             <div className="flex items-center justify-center gap-1">
                                 <span>Status</span>
+                                <ArrowUpDown className="h-3 w-3 text-gray-500 cursor-pointer" />
+                            </div>
+                        </TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
+                            <div className="flex items-center justify-center gap-1">
+                                <span>Bet Size</span>
                                 <ArrowUpDown className="h-3 w-3 text-gray-500 cursor-pointer" />
                             </div>
                         </TableHead>
@@ -209,7 +308,7 @@ export const PlayBaccaratTable = ({ data, loading, error }: PlayBaccaratTablePro
                 <TableBody>
                     {loading && (
                         <TableRow className="border-gray-800">
-                            <TableCell colSpan={7} className="text-center text-gray-500 h-32 italic">
+                            <TableCell colSpan={8} className="text-center text-gray-500 h-32 italic">
                                 Loading data...
                             </TableCell>
                         </TableRow>
@@ -217,7 +316,7 @@ export const PlayBaccaratTable = ({ data, loading, error }: PlayBaccaratTablePro
 
                     {!loading && error && (
                         <TableRow className="border-gray-800">
-                            <TableCell colSpan={7} className="text-center text-red-500 h-32 italic">
+                            <TableCell colSpan={8} className="text-center text-red-500 h-32 italic">
                                 {error}
                             </TableCell>
                         </TableRow>
@@ -225,7 +324,7 @@ export const PlayBaccaratTable = ({ data, loading, error }: PlayBaccaratTablePro
 
                     {!loading && !error && displayRows.length === 0 && (
                         <TableRow className="border-gray-800">
-                            <TableCell colSpan={7} className="text-center text-gray-500 h-32 italic">
+                            <TableCell colSpan={8} className="text-center text-gray-500 h-32 italic">
                                 No active units found.
                             </TableCell>
                         </TableRow>
@@ -249,6 +348,9 @@ export const PlayBaccaratTable = ({ data, loading, error }: PlayBaccaratTablePro
                                     />
                                     <span>{row.status ?? ""}</span>
                                 </div>
+                            </TableCell>
+                            <TableCell className="text-center text-gray-200 text-xs">
+                                {row.bet_size ?? ""}
                             </TableCell>
                             <TableCell className="text-center text-gray-200 text-xs">
                                 {row.user_balance ?? ""}
@@ -301,27 +403,42 @@ export const PlayBaccaratTable = ({ data, loading, error }: PlayBaccaratTablePro
                                         value={editingPatternValue}
                                         autoFocus
                                         onFocus={() => handlePatternFocus(row)}
-                                        onChange={(e) => handlePatternChange(e.target.value)}
+                                        onChange={(e) => handlePatternChange(row, e.target.value)}
                                         onBlur={() => handlePatternBlur(row)}
                                         onKeyDown={(e) => {
                                             if (e.key === "Enter") e.currentTarget.blur()
                                         }}
-                                        maxLength={9}
-                                        className="w-24 h-7 text-center text-xs text-gray-200 bg-[#0a0a0a] border border-[#868686] rounded-[5px] focus:outline-none focus:ring-1 focus:ring-[#868686]"
+                                        maxLength={19}
+                                        className="w-36 h-7 text-center text-xs text-gray-200 bg-transparent border-0 focus:outline-none focus:ring-0"
                                         placeholder="BBBB-BBBB"
                                     />
                                 ) : (
                                     <button
                                         type="button"
                                         onClick={() => handlePatternFocus(row)}
-                                        className="w-full min-w-[6rem] h-7 text-center text-xs text-gray-200 bg-transparent border border-transparent rounded-[5px] hover:border-[#868686] focus:outline-none focus:ring-1 focus:ring-[#868686]"
+                                        className="w-36 h-7 text-center text-xs text-gray-200 bg-transparent border-0 focus:outline-none focus:ring-0"
                                     >
                                         {getPattern(row)}
                                     </button>
                                 )}
                             </TableCell>
                             <TableCell className="text-center text-gray-200 text-xs">
-                                {row.target_profit ?? ""}
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    value={
+                                        editingTargetProfitRowId === String(row.id)
+                                            ? editingTargetProfitValue
+                                            : getTargetProfit(row)
+                                    }
+                                    onFocus={() => handleTargetProfitFocus(row)}
+                                    onChange={(e) => handleTargetProfitChange(e.target.value)}
+                                    onBlur={() => handleTargetProfitBlur(row)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") e.currentTarget.blur()
+                                    }}
+                                    className="w-20 h-7 text-center text-xs text-gray-200 bg-transparent border-0 focus:outline-none focus:ring-0"
+                                />
                             </TableCell>
                             <TableCell className="text-center">
                                 <div className="flex items-center justify-center gap-2">
