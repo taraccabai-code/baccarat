@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient2 } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 
 type BaccaratRecord = {
   id: number | string;
@@ -19,7 +20,9 @@ type BotMonitoringRow = {
   pc_name: string | null;
   status: string | null;
   balance: number | string | null;
-  martingale_level: number | null;
+  level: number | null;
+  pattern: string | null;
+  target_profit: number | null;
   bet: number | string | null;
 };
 
@@ -32,15 +35,18 @@ export async function getBaccaratData(): Promise<BaccaratRecord[]> {
 
   const { data, error } = await supabase
     // Assumes a table named `bot_monitoring` with columns:
-    // id, pc_name, status, balance, martingale_level, bet
+    // id, pc_name, status, balance, level, pattern, target_profit, bet
     .from("bot_monitoring")
-    .select("id, pc_name, status, balance, martingale_level, bet")
+    .select("id, pc_name, status, balance, level, pattern, target_profit, bet")
     .order("id", { ascending: true });
 
   if (error) {
     console.error("Error fetching baccarat / bot_monitoring data:", error);
     return [];
   }
+
+  // Debug log to trace total rows being fetched
+  console.log(`--- FETCHED ${data?.length || 0} ROWS FROM DB ---`);
 
   const rows = (data || []) as BotMonitoringRow[];
 
@@ -51,17 +57,59 @@ export async function getBaccaratData(): Promise<BaccaratRecord[]> {
     // status           -> Status
     // bet              -> Bet Size
     // balance          -> User Balance
-    // martingale_level -> Level
+    // level            -> Level
+    // pattern          -> Pattern
+    // target_profit    -> Target Profit
     units: row.pc_name ?? null,
     status: row.status ?? null,
     bet_size: row.bet ?? null,
     user_balance: row.balance ?? null,
-    level: row.martingale_level ?? null,
-    pattern: null,
-    target_profit: null,
+    level: row.level ?? null,
+    pattern: row.pattern ?? null,
+    target_profit: row.target_profit ?? null,
     actions: null,
   }));
 
   return mapped;
+}
+
+type UpdateBaccaratPayload = {
+  id: number | string;
+  level: number | null;
+  pattern: string | null;
+  target_profit: number | null;
+  bet_size?: number | null;
+};
+
+export async function updateBaccaratRow({
+  id,
+  level,
+  pattern,
+  target_profit,
+  bet_size,
+}: UpdateBaccaratPayload): Promise<void> {
+  const supabase = await createClient2();
+
+  const updateData: any = {
+    level,
+    pattern,
+    target_profit,
+  };
+
+  if (bet_size !== undefined) {
+    updateData.bet = bet_size;
+  }
+
+  const { error } = await supabase
+    .from("bot_monitoring")
+    .update(updateData)
+    .eq("id", id);
+
+  if (error) {
+    console.error("Error updating baccarat row:", error);
+    throw error;
+  }
+
+  revalidatePath("/dashboard/trade/play-baccarat");
 }
 

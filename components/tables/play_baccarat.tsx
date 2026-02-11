@@ -10,7 +10,15 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { ArrowUpDown, ChevronDown } from "lucide-react"
+import { ArrowUpDown, ChevronDown, Check, X } from "lucide-react"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import { updateBaccaratRow } from "@/helper/baccarat"
 
 export type BaccaratRow = {
     id: number | string
@@ -36,24 +44,11 @@ function getStatusColor(status: string | null | undefined): string {
     return STATUS_COLORS[status] ?? "#868686"
 }
 
-/** Set to false when using database data only (e.g. from /api/baccarat/units). */
-const INCLUDE_DUMMY_ROW = true
-
-const DUMMY_ROW: BaccaratRow = {
-    id: "dummy",
-    units: "PC1",
-    status: "Running",
-    user_balance: 62000,
-    level: 15,
-    pattern: "BPPP-BTPP",
-    target_profit: 65000,
-    actions: null,
-}
-
 interface PlayBaccaratTableProps {
     data: BaccaratRow[]
     loading: boolean
     error: string | null
+    onRowUpdate?: (updatedRow: Partial<BaccaratRow> & { id: string | number }) => void
 }
 
 const clampLevel = (n: number | null | undefined) =>
@@ -75,7 +70,7 @@ function formatPatternInput(raw: string, maxLetters = 15): string {
     return groups.join("-")
 }
 
-export const PlayBaccaratTable = ({ data, loading, error }: PlayBaccaratTableProps) => {
+export const PlayBaccaratTable = ({ data, loading, error, onRowUpdate }: PlayBaccaratTableProps) => {
     const [levelByRowId, setLevelByRowId] = useState<Record<string, number>>({})
     const [editingLevelRowId, setEditingLevelRowId] = useState<string | null>(null)
     const [editingLevelValue, setEditingLevelValue] = useState("")
@@ -85,7 +80,9 @@ export const PlayBaccaratTable = ({ data, loading, error }: PlayBaccaratTablePro
     const [targetProfitByRowId, setTargetProfitByRowId] = useState<Record<string, string>>({})
     const [editingTargetProfitRowId, setEditingTargetProfitRowId] = useState<string | null>(null)
     const [editingTargetProfitValue, setEditingTargetProfitValue] = useState("")
-    const displayRows = INCLUDE_DUMMY_ROW ? [DUMMY_ROW, ...data] : data
+    const [betSizeByRowId, setBetSizeByRowId] = useState<Record<string, number>>({})
+    const [savingRowId, setSavingRowId] = useState<string | null>(null)
+    const displayRows = data
 
     const getLevel = useCallback(
         (row: BaccaratRow) =>
@@ -253,6 +250,116 @@ export const PlayBaccaratTable = ({ data, loading, error }: PlayBaccaratTablePro
         [editingTargetProfitValue]
     )
 
+    const getBetSize = useCallback(
+        (row: BaccaratRow) => {
+            const id = String(row.id)
+            if (id in betSizeByRowId) return betSizeByRowId[id]
+            return row.bet_size != null ? Number(row.bet_size) : null
+        },
+        [betSizeByRowId]
+    )
+
+    const handleBetSizeChange = useCallback((rowId: string | number, value: number) => {
+        const id = String(rowId)
+        setBetSizeByRowId((prev) => ({ ...prev, [id]: value }))
+    }, [])
+
+    const hasRowChanges = useCallback(
+        (row: BaccaratRow) => {
+            const id = String(row.id)
+            if (id in levelByRowId && levelByRowId[id] !== clampLevel(row.level)) return true
+            if (id in patternByRowId && patternByRowId[id] !== (row.pattern ?? DEFAULT_PATTERN)) return true
+            if (id in targetProfitByRowId && targetProfitByRowId[id] !== (row.target_profit != null ? String(row.target_profit) : "")) return true
+            if (id in betSizeByRowId && betSizeByRowId[id] !== (row.bet_size != null ? Number(row.bet_size) : null)) return true
+            return false
+        },
+        [levelByRowId, patternByRowId, targetProfitByRowId, betSizeByRowId]
+    )
+
+    const handleCancelRowChanges = useCallback((row: BaccaratRow) => {
+        const id = String(row.id)
+        setLevelByRowId((prev) => {
+            if (!(id in prev)) return prev
+            const next = { ...prev }
+            delete next[id]
+            return next
+        })
+        setPatternByRowId((prev) => {
+            if (!(id in prev)) return prev
+            const next = { ...prev }
+            delete next[id]
+            return next
+        })
+        setTargetProfitByRowId((prev) => {
+            if (!(id in prev)) return prev
+            const next = { ...prev }
+            delete next[id]
+            return next
+        })
+        setBetSizeByRowId((prev) => {
+            if (!(id in prev)) return prev
+            const next = { ...prev }
+            delete next[id]
+            return next
+        })
+        if (editingLevelRowId === id) {
+            setEditingLevelRowId(null)
+            setEditingLevelValue("")
+        }
+        if (editingPatternRowId === id) {
+            setEditingPatternRowId(null)
+            setEditingPatternValue("")
+        }
+        if (editingTargetProfitRowId === id) {
+            setEditingTargetProfitRowId(null)
+            setEditingTargetProfitValue("")
+        }
+    }, [editingLevelRowId, editingPatternRowId, editingTargetProfitRowId])
+
+    const handleConfirmRowChanges = useCallback(
+        async (row: BaccaratRow) => {
+            const id = String(row.id)
+
+            const level = getLevel(row)
+            const pattern = getPattern(row)
+            const targetProfitRaw = getTargetProfit(row)
+            const target_profit =
+                targetProfitRaw.trim() === "" ? null : Number(targetProfitRaw.replace(/\D/g, "")) || null
+            const bet_size = getBetSize(row)
+
+            try {
+                setSavingRowId(id)
+
+                // Directly calling human-readable Server Action
+                await updateBaccaratRow({
+                    id: row.id,
+                    level,
+                    pattern,
+                    target_profit,
+                    bet_size
+                })
+
+                // After successful save, clear local dirty state so row is "clean"
+                handleCancelRowChanges(row)
+
+                // Update row in parent state instead of refetching everything
+                onRowUpdate?.({
+                    id: row.id,
+                    level,
+                    pattern,
+                    target_profit,
+                    bet_size
+                })
+            } catch (error: any) {
+                console.error("Save failed:", error)
+                alert(error.message || "Failed to save changes for this row.")
+            } finally {
+                setSavingRowId((current) => (current === id ? null : current))
+            }
+        },
+        [getLevel, getPattern, getTargetProfit, getBetSize, handleCancelRowChanges, onRowUpdate]
+    )
+
     return (
         <div className="border rounded-md border-gray-800 overflow-hidden">
             <Table>
@@ -272,13 +379,13 @@ export const PlayBaccaratTable = ({ data, loading, error }: PlayBaccaratTablePro
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
                             <div className="flex items-center justify-center gap-1">
-                                <span>Bet Size</span>
+                                <span>User Balance</span>
                                 <ArrowUpDown className="h-3 w-3 text-gray-500 cursor-pointer" />
                             </div>
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
                             <div className="flex items-center justify-center gap-1">
-                                <span>User Balance</span>
+                                <span>Bet Size</span>
                                 <ArrowUpDown className="h-3 w-3 text-gray-500 cursor-pointer" />
                             </div>
                         </TableHead>
@@ -350,10 +457,23 @@ export const PlayBaccaratTable = ({ data, loading, error }: PlayBaccaratTablePro
                                 </div>
                             </TableCell>
                             <TableCell className="text-center text-gray-200 text-xs">
-                                {row.bet_size ?? ""}
+                                {row.user_balance ?? ""}
                             </TableCell>
                             <TableCell className="text-center text-gray-200 text-xs">
-                                {row.user_balance ?? ""}
+                                <Select
+                                    value={String(getBetSize(row) ?? "")}
+                                    onValueChange={(value) => handleBetSizeChange(row.id, Number(value))}
+                                >
+                                    <SelectTrigger className="w-20 h-7 text-xs bg-transparent border-[#868686] text-gray-200">
+                                        <SelectValue placeholder="Select" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-[#1a1a1a] border-gray-800">
+                                        <SelectItem value="10" className="text-gray-200 hover:bg-gray-800">10</SelectItem>
+                                        <SelectItem value="50" className="text-gray-200 hover:bg-gray-800">50</SelectItem>
+                                        <SelectItem value="100" className="text-gray-200 hover:bg-gray-800">100</SelectItem>
+                                        <SelectItem value="200" className="text-gray-200 hover:bg-gray-800">200</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </TableCell>
                             <TableCell className="text-center text-gray-200 text-xs">
                                 <div
@@ -455,6 +575,26 @@ export const PlayBaccaratTable = ({ data, loading, error }: PlayBaccaratTablePro
                                         style={{ backgroundColor: "#868686" }}
                                     >
                                         Run
+                                    </Button>
+                                    <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-6 w-6 text-green-400 hover:text-green-300 hover:bg-[#1a1a1a]"
+                                        disabled={savingRowId === String(row.id) || !hasRowChanges(row)}
+                                        onClick={() => handleConfirmRowChanges(row)}
+                                        aria-label="Confirm row changes"
+                                    >
+                                        <Check className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-6 w-6 text-red-400 hover:text-red-300 hover:bg-[#1a1a1a]"
+                                        disabled={savingRowId === String(row.id) || !hasRowChanges(row)}
+                                        onClick={() => handleCancelRowChanges(row)}
+                                        aria-label="Cancel row changes"
+                                    >
+                                        <X className="h-3.5 w-3.5" />
                                     </Button>
                                 </div>
                             </TableCell>

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import {
     Select,
     SelectContent,
@@ -18,6 +18,8 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { PlayBaccaratTable, type BaccaratRow } from "@/components/tables/play_baccarat"
+import { createClient2 } from "@/lib/supabase/client"
+import { getBaccaratData } from "@/helper/baccarat"
 
 const PlayBacarratPage = () => {
     const [selectedFilter, setSelectedFilter] = useState("All")
@@ -25,25 +27,77 @@ const PlayBacarratPage = () => {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
-    useEffect(() => {
-        const load = async () => {
-            try {
-                const res = await fetch("/api/baccarat/units")
-                if (!res.ok) {
-                    throw new Error("Failed to load data")
-                }
-                const data: BaccaratRow[] = await res.json()
-                setRows(data)
-            } catch (err: any) {
-                console.error("Error fetching baccarat data:", err)
-                setError("Failed to load data")
-            } finally {
-                setLoading(false)
-            }
-        }
+    // IMPORTANT: Initialize Supabase client ONCE to prevent connection drops or duplicates
+    const [supabase] = useState(() => createClient2())
 
-        load()
+    const fetchData = useCallback(async (showLoading = false) => {
+        try {
+            if (showLoading) setLoading(true)
+            const data = await getBaccaratData()
+            setRows(data as BaccaratRow[])
+            setError(null)
+        } catch (err: any) {
+            console.error("Error fetching baccarat data:", err)
+            setError("Failed to load data")
+        } finally {
+            if (showLoading) setLoading(false)
+        }
     }, [])
+
+    const handleUpdateRow = useCallback((updatedRow: Partial<BaccaratRow> & { id: string | number }) => {
+        setRows(prevRows => prevRows.map(row =>
+            String(row.id) === String(updatedRow.id) ? { ...row, ...updatedRow } : row
+        ))
+    }, [])
+
+    useEffect(() => {
+        fetchData(true)
+    }, [fetchData])
+
+    useEffect(() => {
+        console.log("Initializing Realtime listener...")
+
+        const channel = supabase
+            .channel('bot_monitoring_realtime')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'bot_monitoring'
+                },
+                (payload) => {
+                    console.log("Realtime Payload:", payload.eventType, payload.new)
+
+                    if (payload.eventType === 'UPDATE') {
+                        const newRow = payload.new as any
+                        const update: any = { id: newRow.id }
+
+                        // Selectively update only the fields present in the payload
+                        if (newRow.pc_name !== undefined) update.units = newRow.pc_name
+                        if (newRow.status !== undefined) update.status = newRow.status
+                        if (newRow.balance !== undefined) update.user_balance = newRow.balance
+                        if (newRow.bet !== undefined) update.bet_size = newRow.bet
+                        if (newRow.level !== undefined) update.level = newRow.level
+                        if (newRow.pattern !== undefined) update.pattern = newRow.pattern
+                        if (newRow.target_profit !== undefined) update.target_profit = newRow.target_profit
+
+                        handleUpdateRow(update)
+                    } else if (payload.eventType === 'INSERT') {
+                        fetchData()
+                    } else if (payload.eventType === 'DELETE') {
+                        setRows(prevRows => prevRows.filter(r => String(r.id) !== String(payload.old.id)))
+                    }
+                }
+            )
+            .subscribe((status) => {
+                console.log("Realtime Status:", status)
+            })
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }, [supabase, fetchData, handleUpdateRow])
 
     return (
         <div className="w-full h-full p-6">
@@ -147,7 +201,12 @@ const PlayBacarratPage = () => {
                         </div>
                     </div>
 
-                    <PlayBaccaratTable data={rows} loading={loading} error={error} />
+                    <PlayBaccaratTable
+                        data={rows}
+                        loading={loading}
+                        error={error}
+                        onRowUpdate={handleUpdateRow}
+                    />
                 </div>
             </div>
         </div>
