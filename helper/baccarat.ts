@@ -46,7 +46,7 @@ export async function getBaccaratData(): Promise<BaccaratRecord[]> {
   }
 
   // Debug log to trace total rows being fetched
-  console.log(`--- FETCHED ${data?.length || 0} ROWS FROM DB ---`);
+
 
   const rows = (data || []) as BotMonitoringRow[];
 
@@ -79,6 +79,8 @@ type UpdateBaccaratPayload = {
   pattern: string | null;
   target_profit: number | null;
   bet_size?: number | null;
+  status?: string | null;
+  command?: boolean;
 };
 
 export async function updateBaccaratRow({
@@ -87,6 +89,8 @@ export async function updateBaccaratRow({
   pattern,
   target_profit,
   bet_size,
+  status,
+  command,
 }: UpdateBaccaratPayload): Promise<void> {
   const supabase = await createClient2();
 
@@ -95,6 +99,14 @@ export async function updateBaccaratRow({
     pattern,
     target_profit,
   };
+
+  if (status !== undefined) {
+    updateData.status = status;
+  }
+
+  if (command !== undefined) {
+    updateData.command = command;
+  }
 
   if (bet_size !== undefined) {
     updateData.bet = bet_size;

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useCallback } from "react"
+import React, { useState, useCallback, useMemo } from "react"
 import {
     Table,
     TableBody,
@@ -10,7 +10,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { ArrowUpDown, ChevronDown, Check, X } from "lucide-react"
+import { ArrowUpDown, ChevronDown, Check, X, ArrowUp, ArrowDown } from "lucide-react"
 import {
     Select,
     SelectContent,
@@ -70,6 +70,11 @@ function formatPatternInput(raw: string, maxLetters = 15): string {
     return groups.join("-")
 }
 
+type SortConfig = {
+    key: keyof BaccaratRow | null
+    direction: 'asc' | 'desc' | null
+}
+
 export const PlayBaccaratTable = ({ data, loading, error, onRowUpdate }: PlayBaccaratTableProps) => {
     const [levelByRowId, setLevelByRowId] = useState<Record<string, number>>({})
     const [editingLevelRowId, setEditingLevelRowId] = useState<string | null>(null)
@@ -82,7 +87,38 @@ export const PlayBaccaratTable = ({ data, loading, error, onRowUpdate }: PlayBac
     const [editingTargetProfitValue, setEditingTargetProfitValue] = useState("")
     const [betSizeByRowId, setBetSizeByRowId] = useState<Record<string, number>>({})
     const [savingRowId, setSavingRowId] = useState<string | null>(null)
-    const displayRows = data
+    const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null })
+
+    const handleSort = (key: keyof BaccaratRow) => {
+        setSortConfig(prev => {
+            if (prev.key === key) {
+                if (prev.direction === 'asc') return { key, direction: 'desc' }
+                if (prev.direction === 'desc') return { key: null, direction: null }
+            }
+            return { key, direction: 'asc' }
+        })
+    }
+
+    const displayRows = useMemo(() => {
+        if (!sortConfig.key || !sortConfig.direction) return data
+
+        return [...data].sort((a, b) => {
+            const aValue = a[sortConfig.key!]
+            const bValue = b[sortConfig.key!]
+
+            if (aValue === bValue) return 0
+            if (aValue === null || aValue === undefined) return 1
+            if (bValue === null || bValue === undefined) return -1
+
+            const direction = sortConfig.direction === 'asc' ? 1 : -1
+
+            if (typeof aValue === 'number' && typeof bValue === 'number') {
+                return (aValue - bValue) * direction
+            }
+
+            return String(aValue).localeCompare(String(bValue)) * direction
+        })
+    }, [data, sortConfig])
 
     const getLevel = useCallback(
         (row: BaccaratRow) =>
@@ -360,51 +396,144 @@ export const PlayBaccaratTable = ({ data, loading, error, onRowUpdate }: PlayBac
         [getLevel, getPattern, getTargetProfit, getBetSize, handleCancelRowChanges, onRowUpdate]
     )
 
+    const handleStatusChange = useCallback(
+        async (row: BaccaratRow, newStatus: string) => {
+            const id = String(row.id)
+            try {
+                setSavingRowId(id)
+                await updateBaccaratRow({
+                    id: row.id,
+                    level: getLevel(row),
+                    pattern: getPattern(row),
+                    target_profit: Number(getTargetProfit(row)) || null,
+                    bet_size: getBetSize(row),
+                    status: newStatus,
+                    command: newStatus === "Running"
+                })
+
+                onRowUpdate?.({
+                    id: row.id,
+                    status: newStatus,
+                    // Note: command is not in BaccaratRow type yet, but we update it in DB
+                })
+            } catch (error: any) {
+                console.error("Status update failed:", error)
+                alert(error.message || "Failed to update status.")
+            } finally {
+                setSavingRowId((current) => (current === id ? null : current))
+            }
+        },
+        [getLevel, getPattern, getTargetProfit, getBetSize, onRowUpdate]
+    )
+
     return (
         <div className="border rounded-md border-gray-800 overflow-hidden">
             <Table>
                 <TableHeader className="bg-[#0a0a0a]">
                     <TableRow className="border-gray-800 hover:bg-transparent">
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="flex items-center justify-center gap-1 select-none">
                                 <span>Units</span>
-                                <ArrowUpDown className="h-3 w-3 text-gray-500 cursor-pointer" />
+                                <div
+                                    className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
+                                    onClick={() => handleSort('units')}
+                                >
+                                    {sortConfig.key === 'units' ? (
+                                        sortConfig.direction === 'asc' ? <ArrowUp className="h-3 w-3 text-blue-500" /> : <ArrowDown className="h-3 w-3 text-blue-500" />
+                                    ) : (
+                                        <ArrowUpDown className="h-3 w-3 text-gray-500" />
+                                    )}
+                                </div>
                             </div>
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="flex items-center justify-center gap-1 select-none">
                                 <span>Status</span>
-                                <ArrowUpDown className="h-3 w-3 text-gray-500 cursor-pointer" />
+                                <div
+                                    className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
+                                    onClick={() => handleSort('status')}
+                                >
+                                    {sortConfig.key === 'status' ? (
+                                        sortConfig.direction === 'asc' ? <ArrowUp className="h-3 w-3 text-blue-500" /> : <ArrowDown className="h-3 w-3 text-blue-500" />
+                                    ) : (
+                                        <ArrowUpDown className="h-3 w-3 text-gray-500" />
+                                    )}
+                                </div>
                             </div>
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="flex items-center justify-center gap-1 select-none">
                                 <span>User Balance</span>
-                                <ArrowUpDown className="h-3 w-3 text-gray-500 cursor-pointer" />
+                                <div
+                                    className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
+                                    onClick={() => handleSort('user_balance')}
+                                >
+                                    {sortConfig.key === 'user_balance' ? (
+                                        sortConfig.direction === 'asc' ? <ArrowUp className="h-3 w-3 text-blue-500" /> : <ArrowDown className="h-3 w-3 text-blue-500" />
+                                    ) : (
+                                        <ArrowUpDown className="h-3 w-3 text-gray-500" />
+                                    )}
+                                </div>
                             </div>
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="flex items-center justify-center gap-1 select-none">
                                 <span>Bet Size</span>
-                                <ArrowUpDown className="h-3 w-3 text-gray-500 cursor-pointer" />
+                                <div
+                                    className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
+                                    onClick={() => handleSort('bet_size')}
+                                >
+                                    {sortConfig.key === 'bet_size' ? (
+                                        sortConfig.direction === 'asc' ? <ArrowUp className="h-3 w-3 text-blue-500" /> : <ArrowDown className="h-3 w-3 text-blue-500" />
+                                    ) : (
+                                        <ArrowUpDown className="h-3 w-3 text-gray-500" />
+                                    )}
+                                </div>
                             </div>
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="flex items-center justify-center gap-1 select-none">
                                 <span>Level</span>
-                                <ArrowUpDown className="h-3 w-3 text-gray-500 cursor-pointer" />
+                                <div
+                                    className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
+                                    onClick={() => handleSort('level')}
+                                >
+                                    {sortConfig.key === 'level' ? (
+                                        sortConfig.direction === 'asc' ? <ArrowUp className="h-3 w-3 text-blue-500" /> : <ArrowDown className="h-3 w-3 text-blue-500" />
+                                    ) : (
+                                        <ArrowUpDown className="h-3 w-3 text-gray-500" />
+                                    )}
+                                </div>
                             </div>
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="flex items-center justify-center gap-1 select-none">
                                 <span>Pattern</span>
-                                <ArrowUpDown className="h-3 w-3 text-gray-500 cursor-pointer" />
+                                <div
+                                    className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
+                                    onClick={() => handleSort('pattern')}
+                                >
+                                    {sortConfig.key === 'pattern' ? (
+                                        sortConfig.direction === 'asc' ? <ArrowUp className="h-3 w-3 text-blue-500" /> : <ArrowDown className="h-3 w-3 text-blue-500" />
+                                    ) : (
+                                        <ArrowUpDown className="h-3 w-3 text-gray-500" />
+                                    )}
+                                </div>
                             </div>
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="flex items-center justify-center gap-1 select-none">
                                 <span>Target Profit</span>
-                                <ArrowUpDown className="h-3 w-3 text-gray-500 cursor-pointer" />
+                                <div
+                                    className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
+                                    onClick={() => handleSort('target_profit')}
+                                >
+                                    {sortConfig.key === 'target_profit' ? (
+                                        sortConfig.direction === 'asc' ? <ArrowUp className="h-3 w-3 text-blue-500" /> : <ArrowDown className="h-3 w-3 text-blue-500" />
+                                    ) : (
+                                        <ArrowUpDown className="h-3 w-3 text-gray-500" />
+                                    )}
+                                </div>
                             </div>
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
@@ -568,14 +697,18 @@ export const PlayBaccaratTable = ({ data, loading, error, onRowUpdate }: PlayBac
                                     <Button
                                         size="sm"
                                         className="text-white text-xs h-5 px-3 rounded-md border-0"
-                                        style={{ backgroundColor: "#D32020" }}
+                                        style={{ backgroundColor: row.status === "Running" ? "#D32020" : "#868686" }}
+                                        onClick={() => handleStatusChange(row, "Stopped")}
+                                        disabled={savingRowId === String(row.id) || row.status === "Stopped"}
                                     >
                                         Stop
                                     </Button>
                                     <Button
                                         size="sm"
                                         className="text-white text-xs h-5 px-3 rounded-md border-0"
-                                        style={{ backgroundColor: "#868686" }}
+                                        style={{ backgroundColor: row.status === "Stopped" ? "#4ADE80" : "#868686" }}
+                                        onClick={() => handleStatusChange(row, "Running")}
+                                        disabled={savingRowId === String(row.id) || row.status === "Running"}
                                     >
                                         Run
                                     </Button>

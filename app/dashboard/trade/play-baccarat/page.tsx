@@ -55,7 +55,7 @@ const PlayBacarratPage = () => {
     }, [fetchData])
 
     useEffect(() => {
-        console.log("Initializing Realtime listener...")
+
 
         const channel = supabase
             .channel('bot_monitoring_realtime')
@@ -67,7 +67,7 @@ const PlayBacarratPage = () => {
                     table: 'bot_monitoring'
                 },
                 (payload) => {
-                    console.log("Realtime Payload:", payload.eventType, payload.new)
+
 
                     if (payload.eventType === 'UPDATE') {
                         const newRow = payload.new as any
@@ -91,7 +91,7 @@ const PlayBacarratPage = () => {
                 }
             )
             .subscribe((status) => {
-                console.log("Realtime Status:", status)
+
             })
 
         return () => {
