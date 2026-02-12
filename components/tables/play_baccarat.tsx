@@ -18,6 +18,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import { updateBaccaratRow } from "@/helper/baccarat"
 
 export type BaccaratRow = {
@@ -49,6 +50,8 @@ interface PlayBaccaratTableProps {
     loading: boolean
     error: string | null
     onRowUpdate?: (updatedRow: Partial<BaccaratRow> & { id: string | number }) => void
+    selectedRows: Set<string | number>
+    onSelectionChange: (selected: Set<string | number>) => void
 }
 
 const clampLevel = (n: number | null | undefined) =>
@@ -75,7 +78,14 @@ type SortConfig = {
     direction: 'asc' | 'desc' | null
 }
 
-export const PlayBaccaratTable = ({ data, loading, error, onRowUpdate }: PlayBaccaratTableProps) => {
+export const PlayBaccaratTable = ({
+    data,
+    loading,
+    error,
+    onRowUpdate,
+    selectedRows,
+    onSelectionChange
+}: PlayBaccaratTableProps) => {
     const [levelByRowId, setLevelByRowId] = useState<Record<string, number>>({})
     const [editingLevelRowId, setEditingLevelRowId] = useState<string | null>(null)
     const [editingLevelValue, setEditingLevelValue] = useState("")
@@ -88,6 +98,27 @@ export const PlayBaccaratTable = ({ data, loading, error, onRowUpdate }: PlayBac
     const [betSizeByRowId, setBetSizeByRowId] = useState<Record<string, number>>({})
     const [savingRowId, setSavingRowId] = useState<string | null>(null)
     const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null })
+
+    const toggleSelectAll = (checked: boolean) => {
+        if (checked) {
+            onSelectionChange(new Set(data.map(row => row.id)))
+        } else {
+            onSelectionChange(new Set())
+        }
+    }
+
+    const toggleSelectRow = (id: string | number, checked: boolean) => {
+        const next = new Set(selectedRows)
+        if (checked) {
+            next.add(id)
+        } else {
+            next.delete(id)
+        }
+        onSelectionChange(next)
+    }
+
+    const isAllSelected = data.length > 0 && selectedRows.size === data.length
+    const isSomeSelected = selectedRows.size > 0 && selectedRows.size < data.length
 
     const handleSort = (key: keyof BaccaratRow) => {
         setSortConfig(prev => {
@@ -431,6 +462,13 @@ export const PlayBaccaratTable = ({ data, loading, error, onRowUpdate }: PlayBac
             <Table>
                 <TableHeader className="bg-[#0a0a0a]">
                     <TableRow className="border-gray-800 hover:bg-transparent">
+                        <TableHead className="w-12 text-center px-4">
+                            <Checkbox
+                                checked={isAllSelected || (isSomeSelected ? "indeterminate" : false)}
+                                onCheckedChange={(checked) => toggleSelectAll(!!checked)}
+                                aria-label="Select all rows"
+                            />
+                        </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
                             <div className="flex items-center justify-center gap-1 select-none">
                                 <span>Units</span>
@@ -547,7 +585,7 @@ export const PlayBaccaratTable = ({ data, loading, error, onRowUpdate }: PlayBac
                 <TableBody>
                     {loading && (
                         <TableRow className="border-gray-800">
-                            <TableCell colSpan={9} className="text-center text-gray-500 h-32 italic">
+                            <TableCell colSpan={10} className="text-center text-gray-500 h-32 italic">
                                 Loading data...
                             </TableCell>
                         </TableRow>
@@ -555,7 +593,7 @@ export const PlayBaccaratTable = ({ data, loading, error, onRowUpdate }: PlayBac
 
                     {!loading && error && (
                         <TableRow className="border-gray-800">
-                            <TableCell colSpan={9} className="text-center text-red-500 h-32 italic">
+                            <TableCell colSpan={10} className="text-center text-red-500 h-32 italic">
                                 {error}
                             </TableCell>
                         </TableRow>
@@ -563,7 +601,7 @@ export const PlayBaccaratTable = ({ data, loading, error, onRowUpdate }: PlayBac
 
                     {!loading && !error && displayRows.length === 0 && (
                         <TableRow className="border-gray-800">
-                            <TableCell colSpan={9} className="text-center text-gray-500 h-32 italic">
+                            <TableCell colSpan={10} className="text-center text-gray-500 h-32 italic">
                                 No active units found.
                             </TableCell>
                         </TableRow>
@@ -571,6 +609,13 @@ export const PlayBaccaratTable = ({ data, loading, error, onRowUpdate }: PlayBac
 
                     {!loading && !error && displayRows.length > 0 && displayRows.map((row) => (
                         <TableRow key={row.id} className="border-gray-800">
+                            <TableCell className="w-12 text-center px-4">
+                                <Checkbox
+                                    checked={selectedRows.has(row.id)}
+                                    onCheckedChange={(checked) => toggleSelectRow(row.id, !!checked)}
+                                    aria-label={`Select row ${row.units || row.id}`}
+                                />
+                            </TableCell>
                             <TableCell className="text-center text-gray-200 text-xs">
                                 {row.units ?? ""}
                             </TableCell>

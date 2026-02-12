@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { PlayBaccaratTable, type BaccaratRow } from "@/components/tables/play_baccarat"
 import { createClient2 } from "@/lib/supabase/client"
-import { getBaccaratData } from "@/helper/baccarat"
+import { getBaccaratData, updateBaccaratRow } from "@/helper/baccarat"
 
 const PlayBacarratPage = () => {
     const [selectedFilter, setSelectedFilter] = useState("All")
@@ -44,11 +44,55 @@ const PlayBacarratPage = () => {
         }
     }, [])
 
+    const [selectedRows, setSelectedRows] = useState<Set<string | number>>(new Set())
+
     const handleUpdateRow = useCallback((updatedRow: Partial<BaccaratRow> & { id: string | number }) => {
         setRows(prevRows => prevRows.map(row =>
             String(row.id) === String(updatedRow.id) ? { ...row, ...updatedRow } : row
         ))
     }, [])
+
+    const handleBulkStatusChange = useCallback(async (newStatus: "Running" | "Stopped") => {
+        if (selectedRows.size === 0) return
+
+        try {
+            setLoading(true)
+            const updatePromises = Array.from(selectedRows).map(async (id) => {
+                const row = rows.find(r => String(r.id) === String(id))
+                if (!row) return
+
+                await updateBaccaratRow({
+                    id: row.id,
+                    level: row.level,
+                    pattern: row.pattern,
+                    target_profit: Number(row.target_profit) || null,
+                    bet_size: Number(row.bet_size) || null,
+                    status: newStatus,
+                    command: newStatus === "Running"
+                })
+
+                return { id: row.id, status: newStatus }
+            })
+
+            const updates = await Promise.all(updatePromises)
+
+            // Update local state for all rows efficiently
+            setRows(prevRows => prevRows.map(row => {
+                if (selectedRows.has(row.id)) {
+                    return { ...row, status: newStatus }
+                }
+                return row
+            }))
+
+            setSelectedRows(new Set())
+            setError(null)
+        } catch (err: any) {
+            console.error("Bulk status update failed:", err)
+            setError("Failed to update multiple bots. Some updates might have partially succeeded.")
+        } finally {
+            setLoading(false)
+        }
+    }, [selectedRows, rows])
 
     useEffect(() => {
         fetchData(true)
@@ -199,6 +243,22 @@ const PlayBacarratPage = () => {
                                 className="pl-10 h-9 bg-[#0a0a0a] border-gray-800 text-white placeholder:text-gray-500 rounded-md focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:border-blue-500"
                             />
                         </div>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                className="bg-[#4ADE80] hover:bg-[#22c55e] text-black font-semibold h-9 px-6 rounded-md disabled:opacity-50"
+                                onClick={() => handleBulkStatusChange("Running")}
+                                disabled={selectedRows.size === 0 || loading}
+                            >
+                                Run
+                            </Button>
+                            <Button
+                                className="bg-[#D32020] hover:bg-[#b91c1c] text-white font-semibold h-9 px-6 rounded-md disabled:opacity-50"
+                                onClick={() => handleBulkStatusChange("Stopped")}
+                                disabled={selectedRows.size === 0 || loading}
+                            >
+                                Stop
+                            </Button>
+                        </div>
                     </div>
 
                     <PlayBaccaratTable
@@ -206,6 +266,8 @@ const PlayBacarratPage = () => {
                         loading={loading}
                         error={error}
                         onRowUpdate={handleUpdateRow}
+                        selectedRows={selectedRows}
+                        onSelectionChange={setSelectedRows}
                     />
                 </div>
             </div>
