@@ -410,12 +410,15 @@ export const PlayBaccaratTable = ({ data, loading, error, onRowUpdate }: PlayBac
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
                             Actions
                         </TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
+                            {/* Empty header for confirm/cancel icons */}
+                        </TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {loading && (
                         <TableRow className="border-gray-800">
-                            <TableCell colSpan={8} className="text-center text-gray-500 h-32 italic">
+                            <TableCell colSpan={9} className="text-center text-gray-500 h-32 italic">
                                 Loading data...
                             </TableCell>
                         </TableRow>
@@ -423,7 +426,7 @@ export const PlayBaccaratTable = ({ data, loading, error, onRowUpdate }: PlayBac
 
                     {!loading && error && (
                         <TableRow className="border-gray-800">
-                            <TableCell colSpan={8} className="text-center text-red-500 h-32 italic">
+                            <TableCell colSpan={9} className="text-center text-red-500 h-32 italic">
                                 {error}
                             </TableCell>
                         </TableRow>
@@ -431,7 +434,7 @@ export const PlayBaccaratTable = ({ data, loading, error, onRowUpdate }: PlayBac
 
                     {!loading && !error && displayRows.length === 0 && (
                         <TableRow className="border-gray-800">
-                            <TableCell colSpan={8} className="text-center text-gray-500 h-32 italic">
+                            <TableCell colSpan={9} className="text-center text-gray-500 h-32 italic">
                                 No active units found.
                             </TableCell>
                         </TableRow>
@@ -464,7 +467,7 @@ export const PlayBaccaratTable = ({ data, loading, error, onRowUpdate }: PlayBac
                                     value={String(getBetSize(row) ?? "")}
                                     onValueChange={(value) => handleBetSizeChange(row.id, Number(value))}
                                 >
-                                    <SelectTrigger className="w-20 h-7 text-xs bg-transparent border-[#868686] text-gray-200">
+                                    <SelectTrigger className="w-20 h-7 text-xs bg-transparent border-[#868686] text-gray-200 justify-center mx-auto">
                                         <SelectValue placeholder="Select" />
                                     </SelectTrigger>
                                     <SelectContent className="bg-[#1a1a1a] border-gray-800">
@@ -576,6 +579,10 @@ export const PlayBaccaratTable = ({ data, loading, error, onRowUpdate }: PlayBac
                                     >
                                         Run
                                     </Button>
+                                </div>
+                            </TableCell>
+                            <TableCell className="text-center">
+                                <div className="flex items-center justify-center gap-1">
                                     <Button
                                         size="icon"
                                         variant="ghost"
