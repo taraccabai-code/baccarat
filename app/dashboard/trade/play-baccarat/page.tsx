@@ -146,7 +146,7 @@ const PlayBacarratPage = () => {
     return (
         <div className="w-full h-full p-6">
             <div className="flex flex-row items-start gap-6">
-                <div className="w-48 flex flex-col gap-4">
+                <div className="w-48 flex flex-col gap-4 hidden">
                     <div className="w-48">
                         <Select defaultValue="status">
                             <SelectTrigger className="w-full">
