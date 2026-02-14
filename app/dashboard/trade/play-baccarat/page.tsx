@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import {
     Select,
     SelectContent,
@@ -23,6 +23,7 @@ import { getBaccaratData, updateBaccaratRow } from "@/helper/baccarat"
 
 const PlayBacarratPage = () => {
     const [selectedFilter, setSelectedFilter] = useState("All")
+    const [searchQuery, setSearchQuery] = useState("")
     const [rows, setRows] = useState<BaccaratRow[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -45,6 +46,7 @@ const PlayBacarratPage = () => {
     }, [])
 
     const [selectedRows, setSelectedRows] = useState<Set<string | number>>(new Set())
+    const [isUpdating, setIsUpdating] = useState(false)
 
     const handleUpdateRow = useCallback((updatedRow: Partial<BaccaratRow> & { id: string | number }) => {
         setRows(prevRows => prevRows.map(row =>
@@ -56,7 +58,7 @@ const PlayBacarratPage = () => {
         if (selectedRows.size === 0) return
 
         try {
-            setLoading(true)
+            setIsUpdating(true)
             const updatePromises = Array.from(selectedRows).map(async (id) => {
                 const row = rows.find(r => String(r.id) === String(id))
                 if (!row) return
@@ -90,7 +92,7 @@ const PlayBacarratPage = () => {
             console.error("Bulk status update failed:", err)
             setError("Failed to update multiple bots. Some updates might have partially succeeded.")
         } finally {
-            setLoading(false)
+            setIsUpdating(false)
         }
     }, [selectedRows, rows])
 
@@ -142,6 +144,36 @@ const PlayBacarratPage = () => {
             supabase.removeChannel(channel)
         }
     }, [supabase, fetchData, handleUpdateRow])
+
+    const filteredRows = useMemo(() => {
+        if (!searchQuery.trim()) return rows
+
+        const query = searchQuery.toLowerCase()
+
+        return rows.filter(row => {
+            if (selectedFilter === "All") {
+                return (
+                    (row.units?.toLowerCase() || "").includes(query) ||
+                    String(row.level || "").toLowerCase().includes(query) ||
+                    (row.pattern?.toLowerCase() || "").includes(query) ||
+                    (row.status?.toLowerCase() || "").includes(query)
+                )
+            }
+            if (selectedFilter === "Units") {
+                return (row.units?.toLowerCase() || "").includes(query)
+            }
+            if (selectedFilter === "Level") {
+                return String(row.level || "").toLowerCase().includes(query)
+            }
+            if (selectedFilter === "Pattern") {
+                return (row.pattern?.toLowerCase() || "").includes(query)
+            }
+            if (selectedFilter === "Status") {
+                return (row.status?.toLowerCase() || "").includes(query)
+            }
+            return true
+        })
+    }, [rows, searchQuery, selectedFilter])
 
     return (
         <div className="w-full h-full p-6">
@@ -241,20 +273,22 @@ const PlayBacarratPage = () => {
                             <Input
                                 placeholder="Search"
                                 className="pl-10 h-9 bg-[#0a0a0a] border-gray-800 text-white placeholder:text-gray-500 rounded-md focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:border-blue-500"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
                         <div className="flex items-center gap-2">
                             <Button
-                                className="bg-[#4ADE80] hover:bg-[#22c55e] text-black font-semibold h-9 px-6 rounded-md disabled:opacity-50"
+                                className="bg-[#4ADE80] hover:bg-[#22c55e] text-white font-semibold h-9 px-6 rounded-md disabled:opacity-50"
                                 onClick={() => handleBulkStatusChange("Running")}
-                                disabled={selectedRows.size === 0 || loading}
+                                disabled={selectedRows.size === 0 || loading || isUpdating}
                             >
                                 Run
                             </Button>
                             <Button
                                 className="bg-[#D32020] hover:bg-[#b91c1c] text-white font-semibold h-9 px-6 rounded-md disabled:opacity-50"
                                 onClick={() => handleBulkStatusChange("Stopped")}
-                                disabled={selectedRows.size === 0 || loading}
+                                disabled={selectedRows.size === 0 || loading || isUpdating}
                             >
                                 Stop
                             </Button>
@@ -262,7 +296,7 @@ const PlayBacarratPage = () => {
                     </div>
 
                     <PlayBaccaratTable
-                        data={rows}
+                        data={filteredRows}
                         loading={loading}
                         error={error}
                         onRowUpdate={handleUpdateRow}

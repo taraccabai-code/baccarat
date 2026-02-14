@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React from "react"
 import {
     Table,
     TableBody,
@@ -9,53 +9,29 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { createClient2 } from "@/lib/supabase/client"
-import { getPlayHistory, PlayHistory } from "@/helper/play_history"
+import { PlayHistory } from "@/helper/play_history"
 
-export const PlayHistoryTable = () => {
-    const [data, setData] = useState<PlayHistory[]>([])
-    const [loading, setLoading] = useState(true)
-
-    const fetchHistory = async () => {
-        try {
-            const history = await getPlayHistory()
-            setData(history)
-        } catch (error) {
-            console.error("Failed to fetch play history", error)
-        } finally {
-            setLoading(false)
-        }
+export const PlayHistoryTable = ({ data, loading }: { data: PlayHistory[], loading: boolean }) => {
+    const formatDate = (dateString?: string) => {
+        if (!dateString) return "-"
+        return new Date(dateString).toLocaleString("en-US", {
+            year: "numeric",
+            month: "numeric",
+            day: "numeric",
+            hour: "numeric",
+            minute: "numeric",
+            hour12: true,
+        })
     }
-
-    useEffect(() => {
-        fetchHistory()
-
-        const supabase = createClient2()
-        const channel = supabase
-            .channel('play_history_changes')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'play_history'
-                },
-                () => {
-                    fetchHistory()
-                }
-            )
-            .subscribe()
-
-        return () => {
-            supabase.removeChannel(channel)
-        }
-    }, [])
 
     return (
         <div className="border rounded-md border-gray-800 overflow-hidden">
             <Table>
                 <TableHeader className="bg-[#0a0a0a]">
                     <TableRow className="border-gray-800 hover:bg-transparent">
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">
+                            Date/Time
+                        </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">
                             Unit
                         </TableHead>
@@ -79,7 +55,7 @@ export const PlayHistoryTable = () => {
                 <TableBody>
                     {loading && (
                         <TableRow className="border-gray-800">
-                            <TableCell colSpan={6} className="text-center text-gray-500 h-32 italic">
+                            <TableCell colSpan={7} className="text-center text-gray-500 h-32 italic">
                                 Loading history...
                             </TableCell>
                         </TableRow>
@@ -87,7 +63,7 @@ export const PlayHistoryTable = () => {
 
                     {!loading && data.length === 0 && (
                         <TableRow className="border-gray-800">
-                            <TableCell colSpan={6} className="text-center text-gray-500 h-32 italic">
+                            <TableCell colSpan={7} className="text-center text-gray-500 h-32 italic">
                                 No history found.
                             </TableCell>
                         </TableRow>
@@ -97,6 +73,9 @@ export const PlayHistoryTable = () => {
                         const dailyIncome = (row.end_balance || 0) - (row.start_balance || 0)
                         return (
                             <TableRow key={row.id} className="border-gray-800 hover:bg-[#1a1a1a]/50">
+                                <TableCell className="text-center text-gray-200 text-xs py-3">
+                                    {formatDate(row.created_at)}
+                                </TableCell>
                                 <TableCell className="text-center text-gray-200 text-xs py-3">
                                     {row.pc_name}
                                 </TableCell>

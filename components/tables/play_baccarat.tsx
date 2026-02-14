@@ -31,6 +31,7 @@ export type BaccaratRow = {
     status?: string | null
     user_balance?: number | string | null
     bet_size?: number | string | null
+    duration?: string | null
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -575,6 +576,21 @@ export const PlayBaccaratTable = ({
                             </div>
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
+                            <div className="flex items-center justify-center gap-1 select-none">
+                                <span>Duration</span>
+                                <div
+                                    className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
+                                    onClick={() => handleSort('duration')}
+                                >
+                                    {sortConfig.key === 'duration' ? (
+                                        sortConfig.direction === 'asc' ? <ArrowUp className="h-3 w-3 text-blue-500" /> : <ArrowDown className="h-3 w-3 text-blue-500" />
+                                    ) : (
+                                        <ArrowUpDown className="h-3 w-3 text-gray-500" />
+                                    )}
+                                </div>
+                            </div>
+                        </TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
                             Actions
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
@@ -736,6 +752,9 @@ export const PlayBaccaratTable = ({
                                     }}
                                     className="w-20 h-7 text-center text-xs text-gray-200 bg-transparent border-0 focus:outline-none focus:ring-0"
                                 />
+                            </TableCell>
+                            <TableCell className="text-center text-gray-200 text-xs">
+                                {row.duration ?? ""}
                             </TableCell>
                             <TableCell className="text-center">
                                 <div className="flex items-center justify-center gap-2">
