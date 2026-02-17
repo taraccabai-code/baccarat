@@ -32,6 +32,7 @@ export type BaccaratRow = {
     user_balance?: number | string | null
     bet_size?: number | string | null
     duration?: string | null
+    strategy?: string | null
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -60,20 +61,6 @@ const clampLevel = (n: number | null | undefined) =>
 
 const DEFAULT_PATTERN = ""
 
-function formatPatternInput(raw: string, maxLetters = 15): string {
-    const letters = raw
-        .toUpperCase()
-        .replace(/[^BTP]/g, "")
-        .slice(0, maxLetters)
-    if (!letters.length) return ""
-
-    const groups: string[] = []
-    for (let i = 0; i < letters.length; i += 4) {
-        groups.push(letters.slice(i, i + 4))
-    }
-    return groups.join("-")
-}
-
 type SortConfig = {
     key: keyof BaccaratRow | null
     direction: 'asc' | 'desc' | null
@@ -91,12 +78,12 @@ export const PlayBaccaratTable = ({
     const [editingLevelRowId, setEditingLevelRowId] = useState<string | null>(null)
     const [editingLevelValue, setEditingLevelValue] = useState("")
     const [patternByRowId, setPatternByRowId] = useState<Record<string, string>>({})
-    const [editingPatternRowId, setEditingPatternRowId] = useState<string | null>(null)
-    const [editingPatternValue, setEditingPatternValue] = useState("")
     const [targetProfitByRowId, setTargetProfitByRowId] = useState<Record<string, string>>({})
     const [editingTargetProfitRowId, setEditingTargetProfitRowId] = useState<string | null>(null)
     const [editingTargetProfitValue, setEditingTargetProfitValue] = useState("")
     const [betSizeByRowId, setBetSizeByRowId] = useState<Record<string, number>>({})
+    const [strategyByRowId, setStrategyByRowId] = useState<Record<string, string>>({})
+    const [durationByRowId, setDurationByRowId] = useState<Record<string, { d: string, h: string, m: string }>>({})
     const [savingRowId, setSavingRowId] = useState<string | null>(null)
     const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null })
 
@@ -193,17 +180,12 @@ export const PlayBaccaratTable = ({
             // When Level changes, clear the pattern for this row
             setLevel(row.id, clamped)
             setPatternByRowId((prev) => ({ ...prev, [String(row.id)]: "" }))
-            if (editingPatternRowId === String(row.id)) {
-                setEditingPatternRowId(null)
-                setEditingPatternValue("")
-            }
 
             setEditingLevelRowId(null)
             setEditingLevelValue("")
         },
         [
             editingLevelValue,
-            editingPatternRowId,
             setLevel,
             setPatternByRowId,
         ]
@@ -222,59 +204,22 @@ export const PlayBaccaratTable = ({
         setPatternByRowId((prev) => ({ ...prev, [id]: value }))
     }, [])
 
-    const handlePatternFocus = useCallback(
-        (row: BaccaratRow) => {
-            setEditingPatternRowId(String(row.id))
-            setEditingPatternValue(getPattern(row))
-        },
-        [getPattern]
-    )
+    const handlePatternSelect = useCallback(
+        (rowId: string | number, value: string) => {
+            const id = String(rowId)
+            const lettersOnly = value.replace(/-/g, "")
+            const newLevel = clampLevel(lettersOnly.length)
 
-    const handlePatternChange = useCallback(
-        (row: BaccaratRow, raw: string) => {
-            const level = getLevel(row)
-            setEditingPatternValue(formatPatternInput(raw, level))
-        },
-        [getLevel]
-    )
+            setPattern(id, value)
+            setLevel(id, newLevel)
 
-    const handlePatternBlur = useCallback(
-        (row: BaccaratRow) => {
-            const formatted = formatPatternInput(editingPatternValue.trim())
-            const lettersOnly = formatted.replace(/-/g, "")
-
-            if (!lettersOnly.length) {
-                // Empty pattern: clear pattern, keep current level
-                setPattern(row.id, "")
-            } else {
-                const newLevel = clampLevel(lettersOnly.length)
-                const trimmed = lettersOnly.slice(0, newLevel)
-
-                const groups: string[] = []
-                for (let i = 0; i < trimmed.length; i += 4) {
-                    groups.push(trimmed.slice(i, i + 4))
-                }
-                const finalPattern = groups.join("-")
-
-                // When Pattern changes, Level adjusts to match its length
-                setPattern(row.id, finalPattern)
-                setLevel(row.id, newLevel)
-                // If Level is currently being edited for this row, close its edit state
-                if (editingLevelRowId === String(row.id)) {
-                    setEditingLevelRowId(null)
-                    setEditingLevelValue("")
-                }
+            // If Level is currently being edited for this row, close its edit state
+            if (editingLevelRowId === id) {
+                setEditingLevelRowId(null)
+                setEditingLevelValue("")
             }
-
-            setEditingPatternRowId(null)
-            setEditingPatternValue("")
         },
-        [
-            editingPatternValue,
-            editingLevelRowId,
-            setLevel,
-            setPattern,
-        ]
+        [editingLevelRowId, setLevel, setPattern]
     )
 
     const getTargetProfit = useCallback(
@@ -332,6 +277,57 @@ export const PlayBaccaratTable = ({
         setBetSizeByRowId((prev) => ({ ...prev, [id]: value }))
     }, [])
 
+    const getStrategy = useCallback(
+        (row: BaccaratRow) => {
+            const id = String(row.id)
+            if (id in strategyByRowId) return strategyByRowId[id]
+            return row.strategy ?? ""
+        },
+        [strategyByRowId]
+    )
+
+    const handleStrategyChange = useCallback((rowId: string | number, value: string) => {
+        const id = String(rowId)
+        setStrategyByRowId((prev) => ({ ...prev, [id]: value }))
+    }, [])
+
+    const parseDuration = (duration: string | null | undefined) => {
+        if (!duration) return { d: "0", h: "0", m: "0" }
+        const dMatch = duration.match(/(\d+)d/)
+        const hMatch = duration.match(/(\d+)h/)
+        const mMatch = duration.match(/(\d+)m/)
+        return {
+            d: dMatch ? dMatch[1] : "0",
+            h: hMatch ? hMatch[1] : "0",
+            m: mMatch ? mMatch[1] : "0"
+        }
+    }
+
+    const getDuration = useCallback(
+        (row: BaccaratRow) => {
+            const id = String(row.id)
+            if (id in durationByRowId) return durationByRowId[id]
+            return parseDuration(row.duration)
+        },
+        [durationByRowId]
+    )
+
+    const handleDurationChange = useCallback((rowId: string | number, field: 'd' | 'h' | 'm', value: string) => {
+        const id = String(rowId)
+        const digitsOnly = value.replace(/\D/g, "")
+        setDurationByRowId((prev) => {
+            const current = prev[id] || parseDuration(data.find(r => String(r.id) === id)?.duration)
+            return {
+                ...prev,
+                [id]: { ...current, [field]: digitsOnly || "0" }
+            }
+        })
+    }, [data])
+
+    const formatDurationString = (dur: { d: string, h: string, m: string }) => {
+        return `${dur.d}d ${dur.h}h ${dur.m}m`
+    }
+
     const hasRowChanges = useCallback(
         (row: BaccaratRow) => {
             const id = String(row.id)
@@ -339,9 +335,15 @@ export const PlayBaccaratTable = ({
             if (id in patternByRowId && patternByRowId[id] !== (row.pattern ?? DEFAULT_PATTERN)) return true
             if (id in targetProfitByRowId && targetProfitByRowId[id] !== (row.target_profit != null ? String(row.target_profit) : "")) return true
             if (id in betSizeByRowId && betSizeByRowId[id] !== (row.bet_size != null ? Number(row.bet_size) : null)) return true
+            if (id in strategyByRowId && strategyByRowId[id] !== (row.strategy ?? "")) return true
+            if (id in durationByRowId) {
+                const current = durationByRowId[id]
+                const original = parseDuration(row.duration)
+                if (current.d !== original.d || current.h !== original.h || current.m !== original.m) return true
+            }
             return false
         },
-        [levelByRowId, patternByRowId, targetProfitByRowId, betSizeByRowId]
+        [levelByRowId, patternByRowId, targetProfitByRowId, betSizeByRowId, strategyByRowId, durationByRowId]
     )
 
     const handleCancelRowChanges = useCallback((row: BaccaratRow) => {
@@ -370,19 +372,27 @@ export const PlayBaccaratTable = ({
             delete next[id]
             return next
         })
+        setStrategyByRowId((prev) => {
+            if (!(id in prev)) return prev
+            const next = { ...prev }
+            delete next[id]
+            return next
+        })
+        setDurationByRowId((prev) => {
+            if (!(id in prev)) return prev
+            const next = { ...prev }
+            delete next[id]
+            return next
+        })
         if (editingLevelRowId === id) {
             setEditingLevelRowId(null)
             setEditingLevelValue("")
-        }
-        if (editingPatternRowId === id) {
-            setEditingPatternRowId(null)
-            setEditingPatternValue("")
         }
         if (editingTargetProfitRowId === id) {
             setEditingTargetProfitRowId(null)
             setEditingTargetProfitValue("")
         }
-    }, [editingLevelRowId, editingPatternRowId, editingTargetProfitRowId])
+    }, [editingLevelRowId, editingTargetProfitRowId])
 
     const handleConfirmRowChanges = useCallback(
         async (row: BaccaratRow) => {
@@ -404,7 +414,9 @@ export const PlayBaccaratTable = ({
                     level,
                     pattern,
                     target_profit,
-                    bet_size
+                    bet_size,
+                    strategy: getStrategy(row),
+                    duration: formatDurationString(getDuration(row))
                 })
 
                 // After successful save, clear local dirty state so row is "clean"
@@ -416,7 +428,9 @@ export const PlayBaccaratTable = ({
                     level,
                     pattern,
                     target_profit,
-                    bet_size
+                    bet_size,
+                    strategy: getStrategy(row),
+                    duration: formatDurationString(getDuration(row))
                 })
             } catch (error: any) {
                 console.error("Save failed:", error)
@@ -425,7 +439,7 @@ export const PlayBaccaratTable = ({
                 setSavingRowId((current) => (current === id ? null : current))
             }
         },
-        [getLevel, getPattern, getTargetProfit, getBetSize, handleCancelRowChanges, onRowUpdate]
+        [getLevel, getPattern, getTargetProfit, getBetSize, getStrategy, getDuration, handleCancelRowChanges, onRowUpdate]
     )
 
     const handleStatusChange = useCallback(
@@ -439,14 +453,21 @@ export const PlayBaccaratTable = ({
                     pattern: getPattern(row),
                     target_profit: Number(getTargetProfit(row)) || null,
                     bet_size: getBetSize(row),
+                    strategy: getStrategy(row),
+                    duration: formatDurationString(getDuration(row)),
                     status: newStatus,
                     command: newStatus === "Running"
                 })
 
                 onRowUpdate?.({
                     id: row.id,
-                    status: newStatus,
-                    // Note: command is not in BaccaratRow type yet, but we update it in DB
+                    level: getLevel(row),
+                    pattern: getPattern(row),
+                    target_profit: Number(getTargetProfit(row)) || null,
+                    bet_size: getBetSize(row),
+                    strategy: getStrategy(row),
+                    duration: formatDurationString(getDuration(row)),
+                    status: newStatus
                 })
             } catch (error: any) {
                 console.error("Status update failed:", error)
@@ -455,7 +476,7 @@ export const PlayBaccaratTable = ({
                 setSavingRowId((current) => (current === id ? null : current))
             }
         },
-        [getLevel, getPattern, getTargetProfit, getBetSize, onRowUpdate]
+        [getLevel, getPattern, getTargetProfit, getBetSize, getStrategy, getDuration, onRowUpdate]
     )
 
     return (
@@ -538,6 +559,21 @@ export const PlayBaccaratTable = ({
                                     onClick={() => handleSort('level')}
                                 >
                                     {sortConfig.key === 'level' ? (
+                                        sortConfig.direction === 'asc' ? <ArrowUp className="h-3 w-3 text-blue-500" /> : <ArrowDown className="h-3 w-3 text-blue-500" />
+                                    ) : (
+                                        <ArrowUpDown className="h-3 w-3 text-gray-500" />
+                                    )}
+                                </div>
+                            </div>
+                        </TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
+                            <div className="flex items-center justify-center gap-1 select-none">
+                                <span>Strategy</span>
+                                <div
+                                    className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
+                                    onClick={() => handleSort('strategy')}
+                                >
+                                    {sortConfig.key === 'strategy' ? (
                                         sortConfig.direction === 'asc' ? <ArrowUp className="h-3 w-3 text-blue-500" /> : <ArrowDown className="h-3 w-3 text-blue-500" />
                                     ) : (
                                         <ArrowUpDown className="h-3 w-3 text-gray-500" />
@@ -710,30 +746,37 @@ export const PlayBaccaratTable = ({
                                 </div>
                             </TableCell>
                             <TableCell className="text-center text-gray-200 text-xs">
-                                {editingPatternRowId === String(row.id) ? (
-                                    <input
-                                        type="text"
-                                        value={editingPatternValue}
-                                        autoFocus
-                                        onFocus={() => handlePatternFocus(row)}
-                                        onChange={(e) => handlePatternChange(row, e.target.value)}
-                                        onBlur={() => handlePatternBlur(row)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === "Enter") e.currentTarget.blur()
-                                        }}
-                                        maxLength={19}
-                                        className="w-36 h-7 text-center text-xs text-gray-200 bg-transparent border-0 focus:outline-none focus:ring-0"
-                                        placeholder="BBBB-BBBB"
-                                    />
-                                ) : (
-                                    <button
-                                        type="button"
-                                        onClick={() => handlePatternFocus(row)}
-                                        className="w-36 h-7 text-center text-xs text-gray-200 bg-transparent border-0 focus:outline-none focus:ring-0"
-                                    >
-                                        {getPattern(row)}
-                                    </button>
-                                )}
+                                <Select
+                                    value={getStrategy(row)}
+                                    onValueChange={(value) => handleStrategyChange(row.id, value)}
+                                >
+                                    <SelectTrigger className="w-24 h-7 text-xs bg-transparent border-[#868686] text-gray-200 justify-center mx-auto">
+                                        <SelectValue placeholder="Select" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-[#1a1a1a] border-gray-800">
+                                        <SelectItem value="Tank" className="text-gray-200 hover:bg-gray-800">Tank</SelectItem>
+                                        <SelectItem value="Sweeper" className="text-gray-200 hover:bg-gray-800">Sweeper</SelectItem>
+                                        <SelectItem value="Standard" className="text-gray-200 hover:bg-gray-800">Standard</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </TableCell>
+                            <TableCell className="text-center text-gray-200 text-xs">
+                                <Select
+                                    value={getPattern(row)}
+                                    onValueChange={(value) => handlePatternSelect(row.id, value)}
+                                >
+                                    <SelectTrigger className="w-28 h-7 text-xs bg-transparent border-[#868686] text-gray-200 justify-center mx-auto">
+                                        <SelectValue placeholder="Select" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-[#1a1a1a] border-gray-800">
+                                        <SelectItem value="P" className="text-gray-200 hover:bg-gray-800">P</SelectItem>
+                                        <SelectItem value="B" className="text-gray-200 hover:bg-gray-800">B</SelectItem>
+                                        <SelectItem value="PB" className="text-gray-200 hover:bg-gray-800">PB</SelectItem>
+                                        <SelectItem value="BP" className="text-gray-200 hover:bg-gray-800">BP</SelectItem>
+                                        <SelectItem value="PPPB" className="text-gray-200 hover:bg-gray-800">PPPB</SelectItem>
+                                        <SelectItem value="BBBP" className="text-gray-200 hover:bg-gray-800">BBBP</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </TableCell>
                             <TableCell className="text-center text-gray-200 text-xs">
                                 <input
@@ -754,7 +797,41 @@ export const PlayBaccaratTable = ({
                                 />
                             </TableCell>
                             <TableCell className="text-center text-gray-200 text-xs">
-                                {row.duration ?? ""}
+                                <div className="flex items-center justify-center gap-1">
+                                    <div className="flex flex-col items-center">
+                                        <input
+                                            type="text"
+                                            inputMode="numeric"
+                                            value={getDuration(row).d}
+                                            onChange={(e) => handleDurationChange(row.id, 'd', e.target.value)}
+                                            className="w-8 h-7 text-center text-xs text-gray-200 bg-transparent border border-gray-700 rounded focus:border-blue-500 focus:outline-none focus:ring-0"
+                                            placeholder="D"
+                                        />
+                                        <span className="text-[8px] text-gray-500 uppercase mt-0.5">Days</span>
+                                    </div>
+                                    <div className="flex flex-col items-center">
+                                        <input
+                                            type="text"
+                                            inputMode="numeric"
+                                            value={getDuration(row).h}
+                                            onChange={(e) => handleDurationChange(row.id, 'h', e.target.value)}
+                                            className="w-8 h-7 text-center text-xs text-gray-200 bg-transparent border border-gray-700 rounded focus:border-blue-500 focus:outline-none focus:ring-0"
+                                            placeholder="H"
+                                        />
+                                        <span className="text-[8px] text-gray-500 uppercase mt-0.5">Hours</span>
+                                    </div>
+                                    <div className="flex flex-col items-center">
+                                        <input
+                                            type="text"
+                                            inputMode="numeric"
+                                            value={getDuration(row).m}
+                                            onChange={(e) => handleDurationChange(row.id, 'm', e.target.value)}
+                                            className="w-10 h-7 text-center text-xs text-gray-200 bg-transparent border border-gray-700 rounded focus:border-blue-500 focus:outline-none focus:ring-0"
+                                            placeholder="M"
+                                        />
+                                        <span className="text-[8px] text-gray-500 uppercase mt-0.5">Mins</span>
+                                    </div>
+                                </div>
                             </TableCell>
                             <TableCell className="text-center">
                                 <div className="flex items-center justify-center gap-2">
