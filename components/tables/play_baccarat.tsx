@@ -83,7 +83,6 @@ export const PlayBaccaratTable = ({
     const [editingTargetProfitValue, setEditingTargetProfitValue] = useState("")
     const [betSizeByRowId, setBetSizeByRowId] = useState<Record<string, number>>({})
     const [strategyByRowId, setStrategyByRowId] = useState<Record<string, string>>({})
-    const [durationByRowId, setDurationByRowId] = useState<Record<string, { d: string, h: string, m: string }>>({})
     const [savingRowId, setSavingRowId] = useState<string | null>(null)
     const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null })
 
@@ -291,43 +290,6 @@ export const PlayBaccaratTable = ({
         setStrategyByRowId((prev) => ({ ...prev, [id]: value }))
     }, [])
 
-    const parseDuration = (duration: string | null | undefined) => {
-        if (!duration) return { d: "0", h: "0", m: "0" }
-        const dMatch = duration.match(/(\d+)d/)
-        const hMatch = duration.match(/(\d+)h/)
-        const mMatch = duration.match(/(\d+)m/)
-        return {
-            d: dMatch ? dMatch[1] : "0",
-            h: hMatch ? hMatch[1] : "0",
-            m: mMatch ? mMatch[1] : "0"
-        }
-    }
-
-    const getDuration = useCallback(
-        (row: BaccaratRow) => {
-            const id = String(row.id)
-            if (id in durationByRowId) return durationByRowId[id]
-            return parseDuration(row.duration)
-        },
-        [durationByRowId]
-    )
-
-    const handleDurationChange = useCallback((rowId: string | number, field: 'd' | 'h' | 'm', value: string) => {
-        const id = String(rowId)
-        const digitsOnly = value.replace(/\D/g, "")
-        setDurationByRowId((prev) => {
-            const current = prev[id] || parseDuration(data.find(r => String(r.id) === id)?.duration)
-            return {
-                ...prev,
-                [id]: { ...current, [field]: digitsOnly || "0" }
-            }
-        })
-    }, [data])
-
-    const formatDurationString = (dur: { d: string, h: string, m: string }) => {
-        return `${dur.d}d ${dur.h}h ${dur.m}m`
-    }
-
     const hasRowChanges = useCallback(
         (row: BaccaratRow) => {
             const id = String(row.id)
@@ -336,14 +298,9 @@ export const PlayBaccaratTable = ({
             if (id in targetProfitByRowId && targetProfitByRowId[id] !== (row.target_profit != null ? String(row.target_profit) : "")) return true
             if (id in betSizeByRowId && betSizeByRowId[id] !== (row.bet_size != null ? Number(row.bet_size) : null)) return true
             if (id in strategyByRowId && strategyByRowId[id] !== (row.strategy ?? "")) return true
-            if (id in durationByRowId) {
-                const current = durationByRowId[id]
-                const original = parseDuration(row.duration)
-                if (current.d !== original.d || current.h !== original.h || current.m !== original.m) return true
-            }
             return false
         },
-        [levelByRowId, patternByRowId, targetProfitByRowId, betSizeByRowId, strategyByRowId, durationByRowId]
+        [levelByRowId, patternByRowId, targetProfitByRowId, betSizeByRowId, strategyByRowId]
     )
 
     const handleCancelRowChanges = useCallback((row: BaccaratRow) => {
@@ -373,12 +330,6 @@ export const PlayBaccaratTable = ({
             return next
         })
         setStrategyByRowId((prev) => {
-            if (!(id in prev)) return prev
-            const next = { ...prev }
-            delete next[id]
-            return next
-        })
-        setDurationByRowId((prev) => {
             if (!(id in prev)) return prev
             const next = { ...prev }
             delete next[id]
@@ -415,8 +366,7 @@ export const PlayBaccaratTable = ({
                     pattern,
                     target_profit,
                     bet_size,
-                    strategy: getStrategy(row),
-                    duration: formatDurationString(getDuration(row))
+                    strategy: getStrategy(row)
                 })
 
                 // After successful save, clear local dirty state so row is "clean"
@@ -429,8 +379,7 @@ export const PlayBaccaratTable = ({
                     pattern,
                     target_profit,
                     bet_size,
-                    strategy: getStrategy(row),
-                    duration: formatDurationString(getDuration(row))
+                    strategy: getStrategy(row)
                 })
             } catch (error: any) {
                 console.error("Save failed:", error)
@@ -439,7 +388,7 @@ export const PlayBaccaratTable = ({
                 setSavingRowId((current) => (current === id ? null : current))
             }
         },
-        [getLevel, getPattern, getTargetProfit, getBetSize, getStrategy, getDuration, handleCancelRowChanges, onRowUpdate]
+        [getLevel, getPattern, getTargetProfit, getBetSize, getStrategy, handleCancelRowChanges, onRowUpdate]
     )
 
     const handleStatusChange = useCallback(
@@ -454,20 +403,14 @@ export const PlayBaccaratTable = ({
                     target_profit: Number(getTargetProfit(row)) || null,
                     bet_size: getBetSize(row),
                     strategy: getStrategy(row),
-                    duration: formatDurationString(getDuration(row)),
                     status: newStatus,
                     command: newStatus === "Running"
                 })
 
                 onRowUpdate?.({
                     id: row.id,
-                    level: getLevel(row),
-                    pattern: getPattern(row),
-                    target_profit: Number(getTargetProfit(row)) || null,
-                    bet_size: getBetSize(row),
-                    strategy: getStrategy(row),
-                    duration: formatDurationString(getDuration(row)),
-                    status: newStatus
+                    status: newStatus,
+                    // Note: command is not in BaccaratRow type yet, but we update it in DB
                 })
             } catch (error: any) {
                 console.error("Status update failed:", error)
@@ -476,7 +419,7 @@ export const PlayBaccaratTable = ({
                 setSavingRowId((current) => (current === id ? null : current))
             }
         },
-        [getLevel, getPattern, getTargetProfit, getBetSize, getStrategy, getDuration, onRowUpdate]
+        [getLevel, getPattern, getTargetProfit, getBetSize, getStrategy, onRowUpdate]
     )
 
     return (
@@ -797,41 +740,7 @@ export const PlayBaccaratTable = ({
                                 />
                             </TableCell>
                             <TableCell className="text-center text-gray-200 text-xs">
-                                <div className="flex items-center justify-center gap-1">
-                                    <div className="flex flex-col items-center">
-                                        <input
-                                            type="text"
-                                            inputMode="numeric"
-                                            value={getDuration(row).d}
-                                            onChange={(e) => handleDurationChange(row.id, 'd', e.target.value)}
-                                            className="w-8 h-7 text-center text-xs text-gray-200 bg-transparent border border-gray-700 rounded focus:border-blue-500 focus:outline-none focus:ring-0"
-                                            placeholder="D"
-                                        />
-                                        <span className="text-[8px] text-gray-500 uppercase mt-0.5">Days</span>
-                                    </div>
-                                    <div className="flex flex-col items-center">
-                                        <input
-                                            type="text"
-                                            inputMode="numeric"
-                                            value={getDuration(row).h}
-                                            onChange={(e) => handleDurationChange(row.id, 'h', e.target.value)}
-                                            className="w-8 h-7 text-center text-xs text-gray-200 bg-transparent border border-gray-700 rounded focus:border-blue-500 focus:outline-none focus:ring-0"
-                                            placeholder="H"
-                                        />
-                                        <span className="text-[8px] text-gray-500 uppercase mt-0.5">Hours</span>
-                                    </div>
-                                    <div className="flex flex-col items-center">
-                                        <input
-                                            type="text"
-                                            inputMode="numeric"
-                                            value={getDuration(row).m}
-                                            onChange={(e) => handleDurationChange(row.id, 'm', e.target.value)}
-                                            className="w-10 h-7 text-center text-xs text-gray-200 bg-transparent border border-gray-700 rounded focus:border-blue-500 focus:outline-none focus:ring-0"
-                                            placeholder="M"
-                                        />
-                                        <span className="text-[8px] text-gray-500 uppercase mt-0.5">Mins</span>
-                                    </div>
-                                </div>
+                                {row.duration ?? ""}
                             </TableCell>
                             <TableCell className="text-center">
                                 <div className="flex items-center justify-center gap-2">
