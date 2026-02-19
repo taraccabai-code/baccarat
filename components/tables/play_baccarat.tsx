@@ -40,6 +40,7 @@ const STATUS_COLORS: Record<string, string> = {
     Burned: "#D32020",
     Pending: "#868686",
     Stopped: "#FF8000",
+    "Idle (Remotely Stopped)": "#94A3B8", // Slate-400 for idle
 }
 
 function getStatusColor(status: string | null | undefined): string {
@@ -56,8 +57,22 @@ interface PlayBaccaratTableProps {
     onSelectionChange: (selected: Set<string | number>) => void
 }
 
-const clampLevel = (n: number | null | undefined) =>
-    Math.min(15, Math.max(1, Number(n) || 1))
+const getMaxLevel = (betSize: number | string | null | undefined, strategy?: string | null) => {
+    if (strategy === "Sweeper" || strategy === "Burst") return 3
+    const size = Number(betSize)
+    if (size === 10) return 14
+    if (size === 50) return 12
+    if (size === 100) return 11
+    if (size === 200) return 10
+    return 14
+}
+
+const clampLevel = (n: number | null | undefined, betSize?: number | string | null, strategy?: string | null) => {
+    if (n === null || n === undefined) return null
+    const maxL = getMaxLevel(betSize, strategy)
+    const num = Number(n)
+    return Math.min(maxL, Math.max(1, num))
+}
 
 const DEFAULT_PATTERN = ""
 
@@ -92,9 +107,7 @@ export const PlayBaccaratTable = ({
     selectedRows,
     onSelectionChange
 }: PlayBaccaratTableProps) => {
-    const [levelByRowId, setLevelByRowId] = useState<Record<string, number>>({})
-    const [editingLevelRowId, setEditingLevelRowId] = useState<string | null>(null)
-    const [editingLevelValue, setEditingLevelValue] = useState("")
+    const [levelByRowId, setLevelByRowId] = useState<Record<string, number | null>>({})
     const [patternByRowId, setPatternByRowId] = useState<Record<string, string>>({})
     const [targetProfitByRowId, setTargetProfitByRowId] = useState<Record<string, string>>({})
     const [editingTargetProfitRowId, setEditingTargetProfitRowId] = useState<string | null>(null)
@@ -159,54 +172,40 @@ export const PlayBaccaratTable = ({
         })
     }, [data, sortConfig])
 
-    const getLevel = useCallback(
-        (row: BaccaratRow) =>
-            row.id in levelByRowId
-                ? levelByRowId[row.id]
-                : clampLevel(row.level),
-        [levelByRowId]
+    const getBetSize = useCallback(
+        (row: BaccaratRow) => {
+            const id = String(row.id)
+            if (id in betSizeByRowId) return betSizeByRowId[id]
+            return row.bet_size != null ? Number(row.bet_size) : null
+        },
+        [betSizeByRowId]
     )
 
-    const setLevel = useCallback((rowId: string | number, value: number) => {
-        const clamped = clampLevel(value)
+    const getStrategy = useCallback(
+        (row: BaccaratRow) => {
+            const id = String(row.id)
+            if (id in strategyByRowId) return strategyByRowId[id]
+            return row.strategy ?? ""
+        },
+        [strategyByRowId]
+    )
+
+    const getLevel = useCallback(
+        (row: BaccaratRow) => {
+            const betSize = getBetSize(row)
+            const strategy = getStrategy(row)
+            return row.id in levelByRowId
+                ? levelByRowId[row.id]
+                : clampLevel(row.level, betSize, strategy)
+        },
+        [levelByRowId, getBetSize, getStrategy]
+    )
+
+    const setLevel = useCallback((rowId: string | number, value: number | null, betSize?: number | string | null, strategy?: string | null) => {
+        const clamped = value === null ? null : clampLevel(value, betSize, strategy)
         setLevelByRowId((prev) => ({ ...prev, [String(rowId)]: clamped }))
     }, [])
 
-    const handleLevelFocus = useCallback(
-        (row: BaccaratRow) => {
-            const id = String(row.id)
-            setEditingLevelRowId(id)
-            setEditingLevelValue(String(getLevel(row)))
-        },
-        [getLevel]
-    )
-
-    const handleLevelChange = useCallback((raw: string) => {
-        const digitsOnly = raw.replace(/\D/g, "").slice(0, 2)
-        if (digitsOnly === "") {
-            setEditingLevelValue("")
-            return
-        }
-        const num = parseInt(digitsOnly, 10) || 0
-        const clamped = clampLevel(num)
-        setEditingLevelValue(String(clamped))
-    }, [])
-
-    const handleLevelBlur = useCallback(
-        (row: BaccaratRow) => {
-            const parsed = parseInt(editingLevelValue, 10)
-            const clamped = Number.isNaN(parsed) ? clampLevel(row.level) : clampLevel(parsed)
-
-            setLevel(row.id, clamped)
-
-            setEditingLevelRowId(null)
-            setEditingLevelValue("")
-        },
-        [
-            editingLevelValue,
-            setLevel,
-        ]
-    )
 
     const getPattern = useCallback(
         (row: BaccaratRow) => {
@@ -270,18 +269,21 @@ export const PlayBaccaratTable = ({
         [editingTargetProfitValue]
     )
 
-    const getBetSize = useCallback(
-        (row: BaccaratRow) => {
-            const id = String(row.id)
-            if (id in betSizeByRowId) return betSizeByRowId[id]
-            return row.bet_size != null ? Number(row.bet_size) : null
-        },
-        [betSizeByRowId]
-    )
 
     const handleBetSizeChange = useCallback((rowId: string | number, value: number) => {
         const id = String(rowId)
         setBetSizeByRowId((prev) => ({ ...prev, [id]: value }))
+
+        // Also clamp the current level if it exceeds the new max level
+        setLevelByRowId((prevLevels) => {
+            const currentLevel = prevLevels[id]
+            if (currentLevel === null || currentLevel === undefined) return prevLevels
+            const maxL = getMaxLevel(value)
+            if (currentLevel > maxL) {
+                return { ...prevLevels, [id]: maxL }
+            }
+            return prevLevels
+        })
     }, [])
 
     const getDuration = useCallback(
@@ -323,19 +325,47 @@ export const PlayBaccaratTable = ({
         [editingDurationValue]
     )
 
-    const getStrategy = useCallback(
-        (row: BaccaratRow) => {
-            const id = String(row.id)
-            if (id in strategyByRowId) return strategyByRowId[id]
-            return row.strategy ?? ""
-        },
-        [strategyByRowId]
-    )
-
     const handleStrategyChange = useCallback((rowId: string | number, value: string) => {
         const id = String(rowId)
         setStrategyByRowId((prev) => ({ ...prev, [id]: value }))
-    }, [])
+
+        // Also clamp the current level if it exceeds the new max level
+        setLevelByRowId((prevLevels) => {
+            const currentLevel = prevLevels[id]
+            if (currentLevel === null || currentLevel === undefined) {
+                // Even if not in local state, we should check the row level
+                const row = data.find(r => String(r.id) === id)
+                if (row) {
+                    const betSize = betSizeByRowId[id] ?? row.bet_size
+                    const maxL = getMaxLevel(betSize, value)
+
+                    // If strategy is Burst/Sweeper, null is not allowed, default to 1
+                    if (value === "Burst" || value === "Sweeper") {
+                        return { ...prevLevels, [id]: 1 }
+                    }
+
+                    if (Number(row.level || 0) > maxL) {
+                        return { ...prevLevels, [id]: maxL }
+                    }
+                }
+                return prevLevels
+            }
+
+            const row = data.find(r => String(r.id) === id)
+            const betSize = betSizeByRowId[id] ?? row?.bet_size
+            const maxL = getMaxLevel(betSize, value)
+
+            // If strategy is Burst/Sweeper, currentLevel (null) is invalid.
+            if ((value === "Burst" || value === "Sweeper") && currentLevel === null) {
+                return { ...prevLevels, [id]: 1 }
+            }
+
+            if (currentLevel !== null && currentLevel > maxL) {
+                return { ...prevLevels, [id]: maxL }
+            }
+            return prevLevels
+        })
+    }, [betSizeByRowId, data])
 
     const hasRowChanges = useCallback(
         (row: BaccaratRow) => {
@@ -389,10 +419,6 @@ export const PlayBaccaratTable = ({
             delete next[id]
             return next
         })
-        if (editingLevelRowId === id) {
-            setEditingLevelRowId(null)
-            setEditingLevelValue("")
-        }
         if (editingTargetProfitRowId === id) {
             setEditingTargetProfitRowId(null)
             setEditingTargetProfitValue("")
@@ -401,7 +427,7 @@ export const PlayBaccaratTable = ({
             setEditingDurationRowId(null)
             setEditingDurationValue("")
         }
-    }, [editingLevelRowId, editingTargetProfitRowId, editingDurationRowId])
+    }, [editingTargetProfitRowId, editingDurationRowId])
 
     const handleConfirmRowChanges = useCallback(
         async (row: BaccaratRow) => {
@@ -714,45 +740,24 @@ export const PlayBaccaratTable = ({
                                 </Select>
                             </TableCell>
                             <TableCell className="text-center text-gray-200 text-xs">
-                                <div
-                                    className="inline-flex items-center rounded-[5px] border bg-transparent"
-                                    style={{ borderColor: "#868686" }}
+                                <Select
+                                    value={getLevel(row) === null ? "-" : String(getLevel(row))}
+                                    onValueChange={(value) => setLevel(row.id, value === "-" ? null : Number(value), getBetSize(row), getStrategy(row))}
                                 >
-                                    <input
-                                        type="text"
-                                        inputMode="numeric"
-                                        minLength={1}
-                                        maxLength={2}
-                                        value={
-                                            editingLevelRowId === String(row.id)
-                                                ? editingLevelValue
-                                                : String(getLevel(row))
-                                        }
-                                        onFocus={() => handleLevelFocus(row)}
-                                        onChange={(e) =>
-                                            handleLevelChange(e.target.value)
-                                        }
-                                        onBlur={() => handleLevelBlur(row)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === "Enter") e.currentTarget.blur()
-                                        }}
-                                        onWheel={(e) => {
-                                            e.preventDefault()
-                                            const delta = e.deltaY > 0 ? -1 : 1
-                                            const id = String(row.id)
-                                            const next = clampLevel(
-                                                (levelByRowId[id] ?? clampLevel(row.level)) + delta
-                                            )
-                                            setLevelByRowId((prev) => ({ ...prev, [id]: next }))
-                                            if (editingLevelRowId === id)
-                                                setEditingLevelValue(String(next))
-                                        }}
-                                        className="min-w-[2rem] w-9 h-7 text-center text-xs text-gray-200 bg-transparent border-0 focus:outline-none focus:ring-0"
-                                    />
-                                    <span className="pr-1.5 flex items-center text-[#868686]">
-                                        <ChevronDown className="h-3.5 w-3.5" />
-                                    </span>
-                                </div>
+                                    <SelectTrigger className="w-16 h-7 text-xs bg-transparent border-[#868686] text-gray-200 justify-center mx-auto">
+                                        <SelectValue placeholder="-" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-[#1a1a1a] border-gray-800">
+                                        {!(getStrategy(row) === "Burst" || getStrategy(row) === "Sweeper") && (
+                                            <SelectItem value="-" className="text-gray-200 hover:bg-gray-800">-</SelectItem>
+                                        )}
+                                        {[...Array(getMaxLevel(getBetSize(row), getStrategy(row)))].map((_, i) => (
+                                            <SelectItem key={i + 1} value={String(i + 1)} className="text-gray-200 hover:bg-gray-800">
+                                                {i + 1}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </TableCell>
                             <TableCell className="text-center text-gray-200 text-xs">
                                 <Select
@@ -763,9 +768,22 @@ export const PlayBaccaratTable = ({
                                         <SelectValue placeholder="Select" />
                                     </SelectTrigger>
                                     <SelectContent className="bg-[#1a1a1a] border-gray-800">
-                                        <SelectItem value="Tank" className="text-gray-200 hover:bg-gray-800">Tank</SelectItem>
-                                        <SelectItem value="Sweeper" className="text-gray-200 hover:bg-gray-800">Sweeper</SelectItem>
                                         <SelectItem value="Standard" className="text-gray-200 hover:bg-gray-800">Standard</SelectItem>
+                                        <SelectItem
+                                            value="Sweeper"
+                                            className="text-gray-200 hover:bg-gray-800"
+                                            disabled={(getLevel(row) ?? 0) >= 4}
+                                        >
+                                            Sweeper
+                                        </SelectItem>
+                                        <SelectItem
+                                            value="Burst"
+                                            className="text-gray-200 hover:bg-gray-800"
+                                            disabled={(getLevel(row) ?? 0) >= 4}
+                                        >
+                                            Burst
+                                        </SelectItem>
+                                        <SelectItem value="Tank" className="text-gray-200 hover:bg-gray-800">Tank</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </TableCell>

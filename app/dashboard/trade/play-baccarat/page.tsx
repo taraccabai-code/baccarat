@@ -20,6 +20,7 @@ import {
 import { PlayBaccaratTable, type BaccaratRow, generateGamePattern } from "@/components/tables/play_baccarat"
 import { createClient2 } from "@/lib/supabase/client"
 import { getBaccaratData, updateBaccaratRow } from "@/helper/baccarat"
+import { getFunders } from "@/helper/funders"
 
 const PlayBacarratPage = () => {
     const [selectedFilter, setSelectedFilter] = useState("All")
@@ -31,11 +32,31 @@ const PlayBacarratPage = () => {
     // IMPORTANT: Initialize Supabase client ONCE to prevent connection drops or duplicates
     const [supabase] = useState(() => createClient2())
 
+    const [funders, setFunders] = useState<any[]>([])
+    const [selectedFunder, setSelectedFunder] = useState("all")
+    const [statusFilter, setStatusFilter] = useState("all")
+
+    const fetchDropdownData = useCallback(async () => {
+        try {
+            const fundersData = await fetch("/api/funders").then(res => res.json()).catch(() => [])
+            // Fallback to helper if API route doesn't exist or fails (since getFunders is a server action)
+            // But this is a client component, so we should fetch funders differently or just use the data we have
+            // Actually, let's use a server action if we can or just fetch from an endpoint.
+            // For now, I'll assume we can use the getFunders helper if exported properly or fetch it.
+        } catch (err) {
+            console.error("Error fetching dropdown data:", err)
+        }
+    }, [])
+
     const fetchData = useCallback(async (showLoading = false) => {
         try {
             if (showLoading) setLoading(true)
-            const data = await getBaccaratData()
-            setRows(data as BaccaratRow[])
+            const [baccaratData, fundersData] = await Promise.all([
+                getBaccaratData(),
+                getFunders()
+            ])
+            setRows(baccaratData as BaccaratRow[])
+            setFunders(fundersData)
             setError(null)
         } catch (err: any) {
             console.error("Error fetching baccarat data:", err)
@@ -147,11 +168,24 @@ const PlayBacarratPage = () => {
     }, [supabase, fetchData, handleUpdateRow])
 
     const filteredRows = useMemo(() => {
-        if (!searchQuery.trim()) return rows
+        let result = rows
+
+        // Funder Filter (pc_name mapping)
+        if (selectedFunder !== "all") {
+            result = result.filter(row => (row.units || "").toLowerCase().includes(selectedFunder.toLowerCase()))
+        }
+
+        // Status Filter
+        if (statusFilter !== "all") {
+            result = result.filter(row => row.status === statusFilter)
+        }
+
+        // Search Query
+        if (!searchQuery.trim()) return result
 
         const query = searchQuery.toLowerCase()
 
-        return rows.filter(row => {
+        return result.filter(row => {
             if (selectedFilter === "All") {
                 return (
                     (row.units?.toLowerCase() || "").includes(query) ||
@@ -174,50 +208,40 @@ const PlayBacarratPage = () => {
             }
             return true
         })
-    }, [rows, searchQuery, selectedFilter])
+    }, [rows, searchQuery, selectedFilter, selectedFunder, statusFilter])
 
     return (
         <div className="w-full h-full p-6">
             <div className="flex flex-row items-start gap-6">
-                <div className="w-48 flex flex-col gap-4 hidden">
+                <div className="w-48 hidden flex-col gap-4">
                     <div className="w-48">
-                        <Select defaultValue="status">
-                            <SelectTrigger className="w-full">
+                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <SelectTrigger className="w-full bg-[#0a0a0a] border-gray-800 text-white">
                                 <SelectValue placeholder="Status" />
                             </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="status" className="text-muted-foreground">Status</SelectItem>
-                                <SelectItem value="1">Running</SelectItem>
-                                <SelectItem value="2">Burned</SelectItem>
-                                <SelectItem value="3">Stopped</SelectItem>
+                            <SelectContent className="bg-[#1a1a1a] border-gray-800 text-white">
+                                <SelectItem value="all">All Status</SelectItem>
+                                <SelectItem value="Running">Running</SelectItem>
+                                <SelectItem value="Burned">Burned</SelectItem>
+                                <SelectItem value="Stopped">Stopped</SelectItem>
+                                <SelectItem value="Idle (Remotely Stopped)">Idle</SelectItem>
+                                <SelectItem value="Pending">Pending</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
                     <div className="w-48">
-                        <Select defaultValue="pattern">
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Pattern" />
+                        <Select value={selectedFunder} onValueChange={setSelectedFunder}>
+                            <SelectTrigger className="w-full bg-[#0a0a0a] border-gray-800 text-white">
+                                <SelectValue placeholder="Funder" />
                             </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="pattern" className="text-muted-foreground">Pattern</SelectItem>
-                                <SelectItem value="1">Option 1</SelectItem>
-                                <SelectItem value="2">Option 2</SelectItem>
-                                <SelectItem value="3">Option 3</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="w-48">
-                        <Select defaultValue="franchise">
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Franchise" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="franchise" className="text-muted-foreground">Franchise</SelectItem>
-                                <SelectItem value="1">Option 1</SelectItem>
-                                <SelectItem value="2">Option 2</SelectItem>
-                                <SelectItem value="3">Option 3</SelectItem>
+                            <SelectContent className="bg-[#1a1a1a] border-gray-800 text-white">
+                                <SelectItem value="all">All Funders</SelectItem>
+                                {funders.map((funder) => (
+                                    <SelectItem key={funder.id} value={funder.name}>
+                                        {funder.name}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>
