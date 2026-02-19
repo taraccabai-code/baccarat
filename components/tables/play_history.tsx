@@ -36,7 +36,7 @@ export const PlayHistoryTable = ({ data, loading }: { data: PlayHistory[], loadi
                             Unit
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">
-                            Level
+                            Martingale Level
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">
                             Bet Size

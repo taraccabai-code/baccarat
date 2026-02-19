@@ -14,6 +14,7 @@ type BaccaratRecord = {
   user_balance?: number | string | null;
   bet_size?: number | string | null;
   strategy?: string | null;
+  duration?: number | string | null;
 };
 
 type BotMonitoringRow = {
@@ -26,6 +27,7 @@ type BotMonitoringRow = {
   target_profit: number | null;
   bet: number | string | null;
   strategy: string | null;
+  duration: number | string | null;
 };
 
 /**
@@ -39,7 +41,7 @@ export async function getBaccaratData(): Promise<BaccaratRecord[]> {
     // Assumes a table named `bot_monitoring` with columns:
     // id, pc_name, status, balance, level, pattern, target_profit, bet
     .from("bot_monitoring")
-    .select("id, pc_name, status, balance, level, pattern, target_profit, bet, strategy")
+    .select("id, pc_name, status, balance, level, pattern, target_profit, bet, strategy, duration")
     .order("id", { ascending: true });
 
   if (error) {
@@ -70,6 +72,7 @@ export async function getBaccaratData(): Promise<BaccaratRecord[]> {
     pattern: row.pattern ?? null,
     target_profit: row.target_profit ?? null,
     strategy: row.strategy ?? null,
+    duration: row.duration ?? null,
     actions: null,
   }));
 
@@ -85,6 +88,8 @@ type UpdateBaccaratPayload = {
   strategy?: string | null;
   status?: string | null;
   command?: boolean;
+  duration?: number | null;
+  game_pattern?: string | null;
 };
 
 export async function updateBaccaratRow({
@@ -96,6 +101,8 @@ export async function updateBaccaratRow({
   strategy,
   status,
   command,
+  duration,
+  game_pattern,
 }: UpdateBaccaratPayload): Promise<void> {
   const supabase = await createClient2();
 
@@ -119,6 +126,14 @@ export async function updateBaccaratRow({
 
   if (strategy !== undefined) {
     updateData.strategy = strategy;
+  }
+
+  if (duration !== undefined) {
+    updateData.duration = duration;
+  }
+
+  if (game_pattern !== undefined) {
+    updateData.game_pattern = game_pattern;
   }
 
   const { error } = await supabase

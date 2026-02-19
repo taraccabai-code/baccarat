@@ -31,7 +31,7 @@ export type BaccaratRow = {
     status?: string | null
     user_balance?: number | string | null
     bet_size?: number | string | null
-    duration?: string | null
+    duration?: number | string | null
     strategy?: string | null
 }
 
@@ -61,6 +61,24 @@ const clampLevel = (n: number | null | undefined) =>
 
 const DEFAULT_PATTERN = ""
 
+export const generateGamePattern = (level: number | null | undefined, pattern: string | null | undefined) => {
+    if (!pattern || level === null || level === undefined) return ""
+    const numLevel = Number(level)
+    let base = ""
+    while (base.length < numLevel) {
+        base += pattern
+    }
+    const truncated = base.substring(0, numLevel)
+    let result = ""
+    for (let i = 0; i < truncated.length; i++) {
+        if (i > 0 && i % 4 === 0) {
+            result += "-"
+        }
+        result += truncated[i]
+    }
+    return result
+}
+
 type SortConfig = {
     key: keyof BaccaratRow | null
     direction: 'asc' | 'desc' | null
@@ -82,6 +100,9 @@ export const PlayBaccaratTable = ({
     const [editingTargetProfitRowId, setEditingTargetProfitRowId] = useState<string | null>(null)
     const [editingTargetProfitValue, setEditingTargetProfitValue] = useState("")
     const [betSizeByRowId, setBetSizeByRowId] = useState<Record<string, number>>({})
+    const [durationByRowId, setDurationByRowId] = useState<Record<string, string>>({})
+    const [editingDurationRowId, setEditingDurationRowId] = useState<string | null>(null)
+    const [editingDurationValue, setEditingDurationValue] = useState("")
     const [strategyByRowId, setStrategyByRowId] = useState<Record<string, string>>({})
     const [savingRowId, setSavingRowId] = useState<string | null>(null)
     const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null })
@@ -176,9 +197,7 @@ export const PlayBaccaratTable = ({
             const parsed = parseInt(editingLevelValue, 10)
             const clamped = Number.isNaN(parsed) ? clampLevel(row.level) : clampLevel(parsed)
 
-            // When Level changes, clear the pattern for this row
             setLevel(row.id, clamped)
-            setPatternByRowId((prev) => ({ ...prev, [String(row.id)]: "" }))
 
             setEditingLevelRowId(null)
             setEditingLevelValue("")
@@ -186,7 +205,6 @@ export const PlayBaccaratTable = ({
         [
             editingLevelValue,
             setLevel,
-            setPatternByRowId,
         ]
     )
 
@@ -206,19 +224,9 @@ export const PlayBaccaratTable = ({
     const handlePatternSelect = useCallback(
         (rowId: string | number, value: string) => {
             const id = String(rowId)
-            const lettersOnly = value.replace(/-/g, "")
-            const newLevel = clampLevel(lettersOnly.length)
-
             setPattern(id, value)
-            setLevel(id, newLevel)
-
-            // If Level is currently being edited for this row, close its edit state
-            if (editingLevelRowId === id) {
-                setEditingLevelRowId(null)
-                setEditingLevelValue("")
-            }
         },
-        [editingLevelRowId, setLevel, setPattern]
+        [setPattern]
     )
 
     const getTargetProfit = useCallback(
@@ -276,6 +284,45 @@ export const PlayBaccaratTable = ({
         setBetSizeByRowId((prev) => ({ ...prev, [id]: value }))
     }, [])
 
+    const getDuration = useCallback(
+        (row: BaccaratRow) => {
+            const id = String(row.id)
+            if (id in durationByRowId) return durationByRowId[id]
+            return row.duration != null ? String(row.duration) : ""
+        },
+        [durationByRowId]
+    )
+
+    const handleDurationFocus = useCallback(
+        (row: BaccaratRow) => {
+            const id = String(row.id)
+            setEditingDurationRowId(id)
+            setEditingDurationValue(getDuration(row))
+        },
+        [getDuration]
+    )
+
+    const handleDurationChange = useCallback((raw: string) => {
+        const digitsOnly = raw.replace(/\D/g, "")
+        setEditingDurationValue(digitsOnly)
+    }, [])
+
+    const handleDurationBlur = useCallback(
+        (row: BaccaratRow) => {
+            const id = String(row.id)
+            const digitsOnly = editingDurationValue.replace(/\D/g, "")
+
+            setDurationByRowId((prev) => ({
+                ...prev,
+                [id]: digitsOnly,
+            }))
+
+            setEditingDurationRowId(null)
+            setEditingDurationValue("")
+        },
+        [editingDurationValue]
+    )
+
     const getStrategy = useCallback(
         (row: BaccaratRow) => {
             const id = String(row.id)
@@ -297,10 +344,11 @@ export const PlayBaccaratTable = ({
             if (id in patternByRowId && patternByRowId[id] !== (row.pattern ?? DEFAULT_PATTERN)) return true
             if (id in targetProfitByRowId && targetProfitByRowId[id] !== (row.target_profit != null ? String(row.target_profit) : "")) return true
             if (id in betSizeByRowId && betSizeByRowId[id] !== (row.bet_size != null ? Number(row.bet_size) : null)) return true
+            if (id in durationByRowId && durationByRowId[id] !== (row.duration != null ? String(row.duration) : "")) return true
             if (id in strategyByRowId && strategyByRowId[id] !== (row.strategy ?? "")) return true
             return false
         },
-        [levelByRowId, patternByRowId, targetProfitByRowId, betSizeByRowId, strategyByRowId]
+        [levelByRowId, patternByRowId, targetProfitByRowId, betSizeByRowId, durationByRowId, strategyByRowId]
     )
 
     const handleCancelRowChanges = useCallback((row: BaccaratRow) => {
@@ -329,6 +377,12 @@ export const PlayBaccaratTable = ({
             delete next[id]
             return next
         })
+        setDurationByRowId((prev) => {
+            if (!(id in prev)) return prev
+            const next = { ...prev }
+            delete next[id]
+            return next
+        })
         setStrategyByRowId((prev) => {
             if (!(id in prev)) return prev
             const next = { ...prev }
@@ -343,7 +397,11 @@ export const PlayBaccaratTable = ({
             setEditingTargetProfitRowId(null)
             setEditingTargetProfitValue("")
         }
-    }, [editingLevelRowId, editingTargetProfitRowId])
+        if (editingDurationRowId === id) {
+            setEditingDurationRowId(null)
+            setEditingDurationValue("")
+        }
+    }, [editingLevelRowId, editingTargetProfitRowId, editingDurationRowId])
 
     const handleConfirmRowChanges = useCallback(
         async (row: BaccaratRow) => {
@@ -355,6 +413,8 @@ export const PlayBaccaratTable = ({
             const target_profit =
                 targetProfitRaw.trim() === "" ? null : Number(targetProfitRaw.replace(/\D/g, "")) || null
             const bet_size = getBetSize(row)
+            const durationRaw = getDuration(row)
+            const duration = durationRaw.trim() === "" ? null : Number(durationRaw.replace(/\D/g, "")) || null
 
             try {
                 setSavingRowId(id)
@@ -366,7 +426,9 @@ export const PlayBaccaratTable = ({
                     pattern,
                     target_profit,
                     bet_size,
-                    strategy: getStrategy(row)
+                    duration,
+                    strategy: getStrategy(row),
+                    game_pattern: generateGamePattern(level, pattern)
                 })
 
                 // After successful save, clear local dirty state so row is "clean"
@@ -379,6 +441,7 @@ export const PlayBaccaratTable = ({
                     pattern,
                     target_profit,
                     bet_size,
+                    duration,
                     strategy: getStrategy(row)
                 })
             } catch (error: any) {
@@ -388,7 +451,7 @@ export const PlayBaccaratTable = ({
                 setSavingRowId((current) => (current === id ? null : current))
             }
         },
-        [getLevel, getPattern, getTargetProfit, getBetSize, getStrategy, handleCancelRowChanges, onRowUpdate]
+        [getLevel, getPattern, getTargetProfit, getBetSize, getDuration, getStrategy, handleCancelRowChanges, onRowUpdate]
     )
 
     const handleStatusChange = useCallback(
@@ -402,14 +465,17 @@ export const PlayBaccaratTable = ({
                     pattern: getPattern(row),
                     target_profit: Number(getTargetProfit(row)) || null,
                     bet_size: getBetSize(row),
+                    duration: Number(getDuration(row)) || null,
                     strategy: getStrategy(row),
                     status: newStatus,
-                    command: newStatus === "Running"
+                    command: newStatus === "Running",
+                    game_pattern: generateGamePattern(getLevel(row), getPattern(row))
                 })
 
                 onRowUpdate?.({
                     id: row.id,
                     status: newStatus,
+                    duration: Number(getDuration(row)) || null,
                     // Note: command is not in BaccaratRow type yet, but we update it in DB
                 })
             } catch (error: any) {
@@ -419,7 +485,7 @@ export const PlayBaccaratTable = ({
                 setSavingRowId((current) => (current === id ? null : current))
             }
         },
-        [getLevel, getPattern, getTargetProfit, getBetSize, getStrategy, onRowUpdate]
+        [getLevel, getPattern, getTargetProfit, getBetSize, getDuration, getStrategy, onRowUpdate]
     )
 
     return (
@@ -541,7 +607,7 @@ export const PlayBaccaratTable = ({
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
                             <div className="flex items-center justify-center gap-1 select-none">
-                                <span>Target Profit</span>
+                                <span>Traget Profit (%)</span>
                                 <div
                                     className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
                                     onClick={() => handleSort('target_profit')}
@@ -556,7 +622,7 @@ export const PlayBaccaratTable = ({
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
                             <div className="flex items-center justify-center gap-1 select-none">
-                                <span>Duration</span>
+                                <span>Duration (mins.)</span>
                                 <div
                                     className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
                                     onClick={() => handleSort('duration')}
@@ -740,7 +806,22 @@ export const PlayBaccaratTable = ({
                                 />
                             </TableCell>
                             <TableCell className="text-center text-gray-200 text-xs">
-                                {row.duration ?? ""}
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    value={
+                                        editingDurationRowId === String(row.id)
+                                            ? editingDurationValue
+                                            : getDuration(row)
+                                    }
+                                    onFocus={() => handleDurationFocus(row)}
+                                    onChange={(e) => handleDurationChange(e.target.value)}
+                                    onBlur={() => handleDurationBlur(row)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") e.currentTarget.blur()
+                                    }}
+                                    className="w-20 h-7 text-center text-xs text-gray-200 bg-transparent border-0 focus:outline-none focus:ring-0"
+                                />
                             </TableCell>
                             <TableCell className="text-center">
                                 <div className="flex items-center justify-center gap-2">
