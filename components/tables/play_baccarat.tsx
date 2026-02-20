@@ -236,16 +236,9 @@ export const PlayBaccaratTable = ({
     const handlePatternSelect = useCallback(
         (rowId: string | number, value: string) => {
             const id = String(rowId)
-            const strategy = getStrategy({ id } as BaccaratRow)
-
             setPattern(id, value)
-
-            // Auto-switch to Standard if Pattern length >= 4 while on Sweeper/Burst
-            if (value.length >= 4 && (strategy === "Sweeper" || strategy === "Burst")) {
-                setStrategyByRowId((prev) => ({ ...prev, [id]: "Standard" }))
-            }
         },
-        [setPattern, getStrategy]
+        [setPattern]
     )
 
     const getTargetProfit = useCallback(
@@ -364,9 +357,11 @@ export const PlayBaccaratTable = ({
             const betSize = betSizeByRowId[id] ?? row?.bet_size
             const maxL = getMaxLevel(betSize)
 
-            // If strategy is Burst/Sweeper, currentLevel (null) is invalid.
-            if ((value === "Burst" || value === "Sweeper") && currentLevel === null) {
-                return { ...prevLevels, [id]: 1 }
+            // Restricted to Level 1-3 for Burst/Sweeper
+            if (value === "Burst" || value === "Sweeper") {
+                if (currentLevel === null) return { ...prevLevels, [id]: 1 }
+                if (currentLevel > 3) return { ...prevLevels, [id]: 3 }
+                return prevLevels
             }
 
             if (currentLevel !== null && currentLevel > maxL) {
@@ -770,7 +765,10 @@ export const PlayBaccaratTable = ({
                                                     key={levelNum}
                                                     value={String(levelNum)}
                                                     className="text-gray-200 hover:bg-gray-800"
-                                                    disabled={levelNum > maxAllowed}
+                                                    disabled={
+                                                        levelNum > maxAllowed ||
+                                                        ((getStrategy(row) === "Burst" || getStrategy(row) === "Sweeper") && levelNum > 3)
+                                                    }
                                                 >
                                                     {levelNum}
                                                 </SelectItem>
@@ -792,14 +790,12 @@ export const PlayBaccaratTable = ({
                                         <SelectItem
                                             value="Sweeper"
                                             className="text-gray-200 hover:bg-gray-800"
-                                            disabled={(getLevel(row) ?? 0) >= 4 || (getPattern(row)?.length ?? 0) >= 4}
                                         >
                                             Sweeper
                                         </SelectItem>
                                         <SelectItem
                                             value="Burst"
                                             className="text-gray-200 hover:bg-gray-800"
-                                            disabled={(getLevel(row) ?? 0) >= 4 || (getPattern(row)?.length ?? 0) >= 4}
                                         >
                                             Burst
                                         </SelectItem>
