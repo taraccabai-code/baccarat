@@ -16,6 +16,7 @@ import { toast } from "sonner"
 import { DeleteCredentialModal } from "@/components/modal/Delete/DeleteCredential"
 import { deleteCredential } from "@/helper/credentials"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { EditCredentialDialog } from "@/components/modal/Edit/EditCredentialDialog"
 
 interface Credential {
@@ -44,6 +45,7 @@ interface CredentialsTableProps {
 }
 
 export const CredentialsTable = ({ data, funders = [] }: CredentialsTableProps) => {
+    const router = useRouter()
     const [copiedId, setCopiedId] = useState<string | null>(null)
     const [selectedCredential, setSelectedCredential] = useState<{ id: string, name: string } | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -74,6 +76,7 @@ export const CredentialsTable = ({ data, funders = [] }: CredentialsTableProps) 
             toast.success("Credential deleted successfully");
             setIsDeleteModalOpen(false);
             setSelectedCredential(null);
+            router.refresh();
         } catch (error: any) {
             toast.error(error.message || "Failed to delete credential");
         } finally {
@@ -87,7 +90,7 @@ export const CredentialsTable = ({ data, funders = [] }: CredentialsTableProps) 
                 <TableHeader className="bg-[#0d0d0d] border-[#1a1a1a]">
                     <TableRow className="border-[#1a1a1a] hover:bg-transparent">
                         <TableHead className="w-1/5 text-muted-foreground font-medium text-sm pb-4">ACCOUNT NAME</TableHead>
-                        <TableHead className="w-1/5 text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">FUNDER ACCOUNT ID</TableHead>
+                        <TableHead className="w-1/5 text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">FRANCHISE</TableHead>
                         <TableHead className="w-1/5 text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">USERNAME</TableHead>
                         <TableHead className="w-1/5 text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">PASSWORD</TableHead>
                         <TableHead className="w-1/5 text-muted-foreground font-medium text-sm pb-4">ACTIONS</TableHead>
@@ -107,7 +110,7 @@ export const CredentialsTable = ({ data, funders = [] }: CredentialsTableProps) 
                                     {credential.name || "-"}
                                 </TableCell>
                                 <TableCell className="text-white py-4 text-sm whitespace-nowrap">
-                                    {credential.funder_account?.[0]?.id || "-"}
+                                    {credential.franchise?.name || "-"}
                                 </TableCell>
                                 <TableCell className="text-white py-4 text-sm">{credential.username || "-"}</TableCell>
                                 <TableCell className="text-white py-4 font-mono text-sm">
@@ -167,7 +170,7 @@ export const CredentialsTableSkeleton = () => {
                 <TableHeader className="bg-[#0d0d0d] border-[#1a1a1a]">
                     <TableRow className="border-[#1a1a1a] hover:bg-transparent">
                         <TableHead className="w-1/5 text-muted-foreground font-medium text-sm pb-4">ACCOUNT NAME</TableHead>
-                        <TableHead className="w-1/5 text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">FUNDER ACCOUNT ID</TableHead>
+                        <TableHead className="w-1/5 text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">FRANCHISE NAME</TableHead>
                         <TableHead className="w-1/5 text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">USERNAME</TableHead>
                         <TableHead className="w-1/5 text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">PASSWORD</TableHead>
                         <TableHead className="w-1/5 text-muted-foreground font-medium text-sm pb-4">ACTIONS</TableHead>

@@ -1,19 +1,24 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Save, Loader2, ChevronDown } from "lucide-react"
+import { Save, Loader2, Eye, EyeOff } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { createCredential, updateCredential } from "@/helper/credentials"
+import { getFranchises } from "@/helper/franchise"
+import { Franchise } from "@/types/franchise"
+import { BETTING_SITES } from "@/data/bettingSites"
 
 const credentialSchema = z.object({
     name: z.string().min(1, "Account Name is required"),
+    franchise_id: z.string().min(1, "Franchise Name is required"),
+    betting_site: z.string().min(1, "Betting Site is required"),
     username: z.string().min(1, "Username is required"),
     password: z.string().min(1, "Password is required"),
 })
@@ -34,7 +39,13 @@ export const AccountCredentialsForm = ({
 }: AccountCredentialsFormProps) => {
     const router = useRouter()
     const [isPending, setIsPending] = React.useState(false)
+    const [franchises, setFranchises] = useState<Franchise[]>([])
+    const [showPassword, setShowPassword] = useState(false)
     const isUpdate = !!initialData
+
+    useEffect(() => {
+        getFranchises().then(setFranchises).catch(() => setFranchises([]))
+    }, [])
 
     const {
         register,
@@ -44,6 +55,8 @@ export const AccountCredentialsForm = ({
         resolver: zodResolver(credentialSchema),
         defaultValues: {
             name: initialData?.name || "",
+            franchise_id: initialData?.franchise_id || "",
+            betting_site: initialData?.betting_site || "",
             username: initialData?.username || "",
             password: initialData?.password || "",
         },
@@ -90,6 +103,8 @@ export const AccountCredentialsForm = ({
         }
     }
 
+    const selectClassName = "flex h-11 w-full rounded-md border border-[#1a1a1a] bg-[#0d0d0d] px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 transition-all shadow-inner"
+
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Only show title if NOT in a modal */}
@@ -111,6 +126,42 @@ export const AccountCredentialsForm = ({
                 {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
             </div>
 
+            {/* FRANCHISE */}
+            <div className="space-y-2">
+                <Label htmlFor="franchise_id" className="text-white text-sm font-medium">FRANCHISE</Label>
+                <select
+                    id="franchise_id"
+                    {...register("franchise_id")}
+                    className={selectClassName}
+                >
+                    <option value="" disabled className="text-gray-500 bg-[#0d0d0d]">Select a franchise</option>
+                    {franchises.map((f) => (
+                        <option key={f.id} value={f.id} className="bg-[#0d0d0d]">
+                            {f.name}{f.code ? ` (${f.code})` : ""}
+                        </option>
+                    ))}
+                </select>
+                {errors.franchise_id && <p className="text-xs text-red-500 mt-1">{errors.franchise_id.message}</p>}
+            </div>
+
+            {/* BETTING SITE */}
+            <div className="space-y-2">
+                <Label htmlFor="betting_site" className="text-white text-sm font-medium uppercase">BETTING PLATFORM</Label>
+                <select
+                    id="betting_site"
+                    {...register("betting_site")}
+                    className={selectClassName}
+                >
+                    <option value="" disabled className="text-gray-500 bg-[#0d0d0d]">Select a betting platform</option>
+                    {BETTING_SITES.map((site) => (
+                        <option key={site.value} value={site.value} className="bg-[#0d0d0d]">
+                            {site.label}
+                        </option>
+                    ))}
+                </select>
+                {errors.betting_site && <p className="text-xs text-red-500 mt-1">{errors.betting_site.message}</p>}
+            </div>
+
             {/* USERNAME */}
             <div className="space-y-2">
                 <Label htmlFor="username" className="text-white text-sm font-medium">USERNAME</Label>
@@ -126,12 +177,22 @@ export const AccountCredentialsForm = ({
             {/* PASSWORD */}
             <div className="space-y-2">
                 <Label htmlFor="password" className="text-white text-sm font-medium">PASSWORD</Label>
-                <Input
-                    id="password"
-                    {...register("password")}
-                    className="bg-[#0d0d0d] border-[#1a1a1a] text-white placeholder:text-gray-500 h-11 focus:border-blue-500 transition-all shadow-inner"
-                    placeholder="Enter platform password"
-                />
+                <div className="relative">
+                    <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        autoComplete="new-password"
+                        {...register("password")}
+                        className="bg-[#0d0d0d] border-[#1a1a1a] text-white h-11 focus:border-blue-500 transition-all shadow-inner pr-10"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                    >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                </div>
                 {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>}
             </div>
 
