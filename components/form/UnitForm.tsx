@@ -9,8 +9,8 @@ import { Franchise } from "@/types/franchise"
 import { getFranchises } from "@/helper/franchise"
 import { createUnit, updateUnit, getUnits, updateUnitConfig } from "@/helper/units"
 import { toast } from "sonner"
-import { Loader2, ExternalLink } from "lucide-react"
-import Link from "next/link"
+import { Loader2 } from "lucide-react"
+import { BETTING_SITES } from "@/data/bettingSites"
 
 interface UnitFormProps {
     initialData?: Unit | null
@@ -31,7 +31,8 @@ export function UnitForm({ initialData, onSuccess, franchises: initialFranchises
         unit_name: initialData?.unit_name || "",
         api_base_url: initialData?.api_base_url || "",
         franchise_id: initialData?.franchise_id || "",
-        status: initialData?.status || "disabled" as UnitStatus
+        status: initialData?.status || "disabled" as UnitStatus,
+        platform: initialData?.platform || ""
     })
 
     useEffect(() => {
@@ -139,44 +140,23 @@ export function UnitForm({ initialData, onSuccess, franchises: initialFranchises
                 </div>
 
                 <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                        <Link
-                            href={`${formData.api_base_url}`}
-                            target="_blank"
-                            className="text-blue-500 hover:text-blue-400 transition-colors flex items-center gap-1 text-[10px] font-medium"
-                        >
-                            <ExternalLink className="h-3 w-3" />
-                            <span>Root</span>
-                        </Link>
-                        <Label htmlFor="api_base_url">API Base URL</Label>
-                    </div>
-                    <Input
-                        id="api_base_url"
-                        placeholder="https://api.example.com"
-                        value={formData.api_base_url || ""}
-                        onChange={(e) => setFormData({ ...formData, api_base_url: e.target.value })}
-                        className="bg-[#050505] border-[#1a1a1a] focus:border-blue-500/50"
-                    />
-                    <p className="text-[10px] text-muted-foreground">The base URL where the unit API is hosted.</p>
+                    <Label htmlFor="platform">Platform</Label>
+                    <select
+                        id="platform"
+                        value={formData.platform || ""}
+                        onChange={(e) => setFormData({ ...formData, platform: e.target.value })}
+                        required
+                        className="flex h-10 w-full rounded-md border border-[#1a1a1a] bg-[#050505] px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 focus:border-blue-500/50"
+                    >
+                        <option value="" disabled>Select a platform</option>
+                        {BETTING_SITES.map((site) => (
+                            <option key={site.value} value={site.value}>
+                                {site.label}
+                            </option>
+                        ))}
+                    </select>
                 </div>
 
-                {isEditing && (
-                    <div className="space-y-2">
-                        <Label htmlFor="status">Status</Label>
-                        <select
-                            id="status"
-                            value={formData.status || ""}
-                            onChange={(e) => setFormData({ ...formData, status: e.target.value as UnitStatus })}
-                            className="flex h-10 w-full rounded-md border border-[#1a1a1a] bg-[#050505] px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 focus:border-blue-500/50"
-                        >
-                            {UNIT_STATUSES.map((status) => (
-                                <option key={status} value={status}>
-                                    {status.charAt(0) + status.slice(1)}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                )}
             </div>
 
             <div className="flex gap-3 pt-4 justify-end">
