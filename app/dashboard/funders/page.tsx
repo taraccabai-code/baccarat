@@ -1,9 +1,9 @@
 "use client"
 
 import React, { Suspense, useState, useEffect } from 'react'
-import { getFunders } from '@/helper/funders'
+import { getPlatformWebsites, PlatformWebsiteRecord } from '@/helper/platform_websites'
 import { SearchBarHeader } from '@/components/ui/search-bar-header'
-import { FundersTable } from '@/components/tables/funders'
+import { BettingPlatformTable } from '@/components/tables/betting_platforms'
 import { FundersTableSkeleton } from '@/components/skeleton/FundersTableSkeleton'
 import { FunderModal } from '@/components/modal/FunderModal'
 
@@ -14,20 +14,20 @@ const FundersPage = () => {
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [selectedFunder, setSelectedFunder] = useState<any | null>(null)
 
-    const fetchFunders = async (silent = false) => {
+    const fetchPlatforms = async (silent = false) => {
         if (!silent) setIsLoading(true)
         try {
-            const data = await getFunders()
-            setFunders(data)
+            const data = await getPlatformWebsites()
+            setFunders(data) // Reusing funders state for now to minimize changes, but it holds platform data
         } catch (error) {
-            console.error("Failed to fetch funders:", error)
+            console.error("Failed to fetch platforms:", error)
         } finally {
             if (!silent) setIsLoading(false)
         }
     }
 
     useEffect(() => {
-        fetchFunders()
+        fetchPlatforms()
     }, [])
 
     const handleAddClick = () => {
@@ -48,16 +48,23 @@ const FundersPage = () => {
     const handleModalSuccess = () => {
         setIsModalOpen(false)
         setSelectedFunder(null)
-        fetchFunders(true) // Refresh silently
+        fetchPlatforms(true) // Refresh silently
     }
-
-    const filteredFunders = funders.filter(funder => {
+    const filteredPlatforms = (funders as PlatformWebsiteRecord[]).filter(platform => {
         const query = searchQuery.toLowerCase()
         return (
-            (funder.name?.toLowerCase() || "").includes(query) ||
-            (funder.allias?.toLowerCase() || "").includes(query)
+            (platform.platform_name?.toLowerCase() || "").includes(query) ||
+            (platform.platform_website?.toLowerCase() || "").includes(query)
         )
     })
+
+    const mappedPlatforms = filteredPlatforms.map(platform => ({
+        id: platform.id,
+        name: platform.platform_name || "Unknown",
+        website: platform.platform_website || "N/A",
+        min_bet: platform.min_bet || "0",
+        raw: platform // Pass the full record for editing
+    }))
 
     return (
         <div suppressHydrationWarning className="p-6 bg-[#050505] h-full">
@@ -65,9 +72,8 @@ const FundersPage = () => {
                 {/* Header Section */}
                 <div className="px-6 pt-6 pb-10">
                     <SearchBarHeader
-                        title="Funders"
-                        addButtonText="Add Funder"
-                        // addHref="/dashboard/funders/add-funder" // Removed
+                        title="Betting Platforms"
+                        addButtonText="Add Platform"
                         onAddClick={handleAddClick}
                         showSearch={true}
                         onSearchChange={setSearchQuery}
@@ -79,8 +85,9 @@ const FundersPage = () => {
                     {isLoading ? (
                         <FundersTableSkeleton />
                     ) : (
-                        <FundersTable
-                            data={filteredFunders}
+                        <BettingPlatformTable
+                            data={mappedPlatforms}
+                            loading={isLoading}
                             onEdit={handleEditClick}
                         />
                     )}

@@ -50,6 +50,11 @@ const menuItems: MenuItem[] = [
     icon: <LayoutDashboard className="w-4 h-4" />,
   },
   {
+    title: "Betting Platforms",
+    href: "/dashboard/funders",
+    icon: <Users className="w-4 h-4" />,
+  },
+  {
     title: "Baccarat",
     icon: <Server className="w-4 h-4" />,
     children: [
