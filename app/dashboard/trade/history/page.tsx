@@ -1,8 +1,8 @@
 "use client"
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react'
-import { History, Search, ChevronDown, CalendarIcon, X } from 'lucide-react'
-import { PlayHistoryTable } from '@/components/tables/play_history'
+import { History, Search, ChevronDown, CalendarIcon, X, Download } from 'lucide-react'
+import { PlayHistoryTable, IncomeViewMode, DailyAggregatedRow } from '@/components/tables/play_history'
 import { createClient2 } from "@/lib/supabase/client"
 import { getPlayHistory, PlayHistory } from "@/helper/play_history"
 import { Input } from "@/components/ui/input"
@@ -36,6 +36,13 @@ const TradeHistoryPage = () => {
     // Date filter state
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
     const [datePopoverOpen, setDatePopoverOpen] = useState(false)
+
+    // Income view mode state
+    const [incomeViewMode, setIncomeViewMode] = useState<IncomeViewMode>("per_game")
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1)
+    const itemsPerPage = 100
 
     const fetchHistory = useCallback(async () => {
         try {
@@ -110,6 +117,7 @@ const TradeHistoryPage = () => {
 
         // Apply franchise filter
         if (selectedFranchise !== "All") {
+            const firstWord = selectedFranchise.split(" ")[0].toLowerCase()
             const unitNames = new Set<string>()
             franchises.forEach((f) => {
                 if (f.name === selectedFranchise) {
@@ -118,7 +126,10 @@ const TradeHistoryPage = () => {
                     })
                 }
             })
-            result = result.filter(row => unitNames.has(row.pc_name))
+            result = result.filter(row => {
+                const pcName = row.pc_name || ""
+                return unitNames.has(pcName) || pcName.toLowerCase().includes(firstWord)
+            })
         }
 
         // Apply date range filter
@@ -146,6 +157,161 @@ const TradeHistoryPage = () => {
         return result
     }, [data, selectedFranchise, dateRange, franchises, searchQuery])
 
+    // Aggregate data by date + unit for Daily view
+    const dailyAggregatedData = useMemo<DailyAggregatedRow[]>(() => {
+        if (incomeViewMode !== "daily") return []
+
+        // Group by date (YYYY-MM-DD) + pc_name
+        const grouped: Record<string, PlayHistory[]> = {}
+        filteredData.forEach(row => {
+            const dateKey = row.created_at
+                ? new Date(row.created_at).toLocaleDateString("en-CA") // YYYY-MM-DD format
+                : "unknown"
+            const key = `${dateKey}|||${row.pc_name || "unknown"}`
+            if (!grouped[key]) grouped[key] = []
+            grouped[key].push(row)
+        })
+
+        // Convert groups to aggregated rows
+        const result: DailyAggregatedRow[] = Object.entries(grouped).map(([key, rows]) => {
+            const [dateStr, pcName] = key.split("|||")
+            // Sort rows by created_at ascending to get first and last of the day
+            const sorted = [...rows].sort((a, b) => {
+                const da = a.created_at ? new Date(a.created_at).getTime() : 0
+                const db = b.created_at ? new Date(b.created_at).getTime() : 0
+                return da - db
+            })
+            const firstRow = sorted[0]
+            const lastRow = sorted[sorted.length - 1]
+            const startBalance = firstRow.start_balance || 0
+            const endBalance = lastRow.end_balance || 0
+            const dailyIncome = endBalance - startBalance
+
+            return {
+                date: dateStr === "unknown" ? "" : `${dateStr}T00:00:00`,
+                pc_name: pcName,
+                level: "-",
+                bet_size: "-",
+                start_balance: startBalance,
+                end_balance: endBalance,
+                dailyIncome,
+            }
+        })
+
+        // Sort by date descending
+        result.sort((a, b) => {
+            const da = a.date ? new Date(a.date).getTime() : 0
+            const db = b.date ? new Date(b.date).getTime() : 0
+            return db - da
+        })
+
+        return result
+    }, [filteredData, incomeViewMode])
+
+    const displayData = incomeViewMode === "daily" ? dailyAggregatedData : filteredData
+
+    // Reset pagination when filters change
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [searchQuery, selectedFranchise, dateRange, incomeViewMode])
+
+    const totalPages = Math.ceil(displayData.length / itemsPerPage)
+    const paginatedData = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage
+        return displayData.slice(startIndex, startIndex + itemsPerPage)
+    }, [displayData, currentPage, itemsPerPage])
+
+    const handleDownloadCSV = useCallback(() => {
+        if (selectedFranchise === "All" || displayData.length === 0) return
+
+        const isDaily = incomeViewMode === "daily"
+
+        const headers = [
+            isDaily ? "Date" : "Date/Time",
+            "Unit",
+            "Martingale Level",
+            "Bet Size",
+            isDaily ? "Starting Day Capital" : "Starting Capital",
+            isDaily ? "End Day Capital" : "End Capital",
+            isDaily ? "Daily Income" : "Per Game Income",
+            "Commission"
+        ]
+
+        const csvRows = [headers.join(",")]
+        let totalIncome = 0
+        let totalCommission = 0
+
+        if (isDaily) {
+            (displayData as DailyAggregatedRow[]).forEach(row => {
+                const income = row.dailyIncome
+                if (income <= 0) return
+
+                totalIncome += income
+                const commission = income > 0 ? income * 0.05 : 0
+                totalCommission += commission
+
+                const dateStr = row.date ? new Date(row.date).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "numeric",
+                    day: "numeric",
+                }) : "-"
+
+                const csvRow = [
+                    `"${dateStr}"`,
+                    `"${row.pc_name || ""}"`,
+                    row.level || "",
+                    row.bet_size || "",
+                    row.start_balance || 0,
+                    row.end_balance || 0,
+                    income.toFixed(2),
+                    commission.toFixed(2)
+                ]
+                csvRows.push(csvRow.join(","))
+            })
+            csvRows.push(`"","","","","","Total",${totalIncome.toFixed(2)},${totalCommission.toFixed(2)}`)
+        } else {
+            (displayData as PlayHistory[]).forEach(row => {
+                const perGameIncome = (row.end_balance || 0) - (row.start_balance || 0)
+                if (perGameIncome <= 0) return
+
+                totalIncome += perGameIncome
+
+                const dateStr = row.created_at ? new Date(row.created_at).toLocaleString("en-US", {
+                    year: "numeric",
+                    month: "numeric",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "numeric",
+                    hour12: true,
+                }) : "-"
+
+                const csvRow = [
+                    `"${dateStr}"`,
+                    `"${row.pc_name || ""}"`,
+                    row.level || "",
+                    row.bet_size || "",
+                    row.start_balance || 0,
+                    row.end_balance || 0,
+                    perGameIncome.toFixed(2),
+                    "-"
+                ]
+                csvRows.push(csvRow.join(","))
+            })
+            csvRows.push(`"","","","","","Total Income",${totalIncome.toFixed(2)},-`)
+        }
+
+        const csvString = csvRows.join("\n")
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement("a")
+        link.setAttribute("href", url)
+        link.setAttribute("download", `play_history_${incomeViewMode}_${selectedFranchise.replace(/\s+/g, '_')}_${format(new Date(), "yyyyMMdd")}.csv`)
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+    }, [displayData, selectedFranchise, incomeViewMode])
+
     return (
         <div className="animate-in fade-in duration-500 w-full p-8 bg-[#050505] min-h-screen">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
@@ -155,6 +321,29 @@ const TradeHistoryPage = () => {
                         Play History
                     </h2>
                     <p className="text-sm text-muted-foreground">Review completed playing sessions and their parameters.</p>
+                </div>
+                {/* Income View Mode Toggle - Upper Right */}
+                <div className="flex items-center gap-1 bg-[#0a0a0a] border border-gray-800 rounded-lg p-1">
+                    <button
+                        className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-all duration-200 ${
+                            incomeViewMode === "per_game"
+                                ? "bg-[#2563eb] text-white shadow-md"
+                                : "text-gray-400 hover:text-white hover:bg-[#1a1a1a]"
+                        }`}
+                        onClick={() => setIncomeViewMode("per_game")}
+                    >
+                        Per Game
+                    </button>
+                    <button
+                        className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-all duration-200 ${
+                            incomeViewMode === "daily"
+                                ? "bg-[#2563eb] text-white shadow-md"
+                                : "text-gray-400 hover:text-white hover:bg-[#1a1a1a]"
+                        }`}
+                        onClick={() => setIncomeViewMode("daily")}
+                    >
+                        Daily
+                    </button>
                 </div>
             </div>
 
@@ -196,7 +385,13 @@ const TradeHistoryPage = () => {
                         >
                             Beta Global
                         </DropdownMenuItem>
-                        {franchises.filter(f => !["Alpha Pro", "Gamma Systems", "Beta Global"].includes(f.name)).map((f) => (
+                        <DropdownMenuItem
+                            className="hover:bg-gray-800 cursor-pointer"
+                            onClick={() => setSelectedFranchise("Josh")}
+                        >
+                            Josh
+                        </DropdownMenuItem>
+                        {franchises.filter(f => !["Alpha Pro", "Gamma Systems", "Beta Global", "Josh"].includes(f.name)).map((f) => (
                             <DropdownMenuItem
                                 key={f.id}
                                 className="hover:bg-gray-800 cursor-pointer"
@@ -274,9 +469,55 @@ const TradeHistoryPage = () => {
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
+                
+                <Button
+                    variant="outline"
+                    size="icon"
+                    className={`h-9 w-9 shrink-0 border-gray-700 bg-[#0a0a0a] rounded-md ${
+                        selectedFranchise === "All" || displayData.length === 0
+                            ? "opacity-50 cursor-not-allowed text-gray-500"
+                            : "text-gray-200 hover:bg-[#1a1a1a] hover:text-white"
+                    }`}
+                    onClick={handleDownloadCSV}
+                    disabled={selectedFranchise === "All" || displayData.length === 0}
+                    title={selectedFranchise === "All" ? "Select a franchise to download" : "Download CSV"}
+                >
+                    <Download className="h-4 w-4" />
+                </Button>
             </div>
 
-            <PlayHistoryTable data={filteredData} loading={loading} />
+            <PlayHistoryTable data={paginatedData} loading={loading} viewMode={incomeViewMode} />
+
+            {!loading && totalPages > 1 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4">
+                    <div className="text-sm text-gray-400">
+                        Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, displayData.length)} of {displayData.length} entries
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="bg-[#0a0a0a] border-gray-800 text-gray-200 hover:bg-[#1a1a1a] hover:text-white"
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                        >
+                            Previous
+                        </Button>
+                        <div className="text-sm text-gray-400 font-medium px-2">
+                            Page {currentPage} of {totalPages}
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="bg-[#0a0a0a] border-gray-800 text-gray-200 hover:bg-[#1a1a1a] hover:text-white"
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                        >
+                            Next
+                        </Button>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
