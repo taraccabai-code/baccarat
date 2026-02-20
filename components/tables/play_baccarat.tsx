@@ -252,7 +252,7 @@ export const PlayBaccaratTable = ({
         (row: BaccaratRow) => {
             const id = String(row.id)
             if (id in targetProfitByRowId) return targetProfitByRowId[id]
-            return row.target_profit != null ? String(row.target_profit) : ""
+            return row.target_profit != null ? String(row.target_profit) : "0"
         },
         [targetProfitByRowId]
     )
@@ -310,7 +310,7 @@ export const PlayBaccaratTable = ({
         (row: BaccaratRow) => {
             const id = String(row.id)
             if (id in durationByRowId) return durationByRowId[id]
-            return row.duration != null ? String(row.duration) : ""
+            return row.duration != null ? String(row.duration) : "0"
         },
         [durationByRowId]
     )
@@ -381,9 +381,9 @@ export const PlayBaccaratTable = ({
             const id = String(row.id)
             if (id in levelByRowId && levelByRowId[id] !== clampLevel(row.level, row.bet_size)) return true
             if (id in patternByRowId && patternByRowId[id] !== (row.pattern ?? DEFAULT_PATTERN)) return true
-            if (id in targetProfitByRowId && targetProfitByRowId[id] !== (row.target_profit != null ? String(row.target_profit) : "")) return true
+            if (id in targetProfitByRowId && targetProfitByRowId[id] !== (row.target_profit != null ? String(row.target_profit) : "0")) return true
             if (id in betSizeByRowId && betSizeByRowId[id] !== (row.bet_size != null ? Number(row.bet_size) : null)) return true
-            if (id in durationByRowId && durationByRowId[id] !== (row.duration != null ? String(row.duration) : "")) return true
+            if (id in durationByRowId && durationByRowId[id] !== (row.duration != null ? String(row.duration) : "0")) return true
             if (id in strategyByRowId && strategyByRowId[id] !== (row.strategy ?? "")) return true
             return false
         },
@@ -446,10 +446,10 @@ export const PlayBaccaratTable = ({
             const pattern = getPattern(row)
             const targetProfitRaw = getTargetProfit(row)
             const target_profit =
-                targetProfitRaw.trim() === "" ? null : Number(targetProfitRaw.replace(/\D/g, "")) || null
+                targetProfitRaw.trim() === "" ? 0 : Number(targetProfitRaw.replace(/\D/g, "")) || 0
             const bet_size = getBetSize(row)
             const durationRaw = getDuration(row)
-            const duration = durationRaw.trim() === "" ? null : Number(durationRaw.replace(/\D/g, "")) || null
+            const duration = durationRaw.trim() === "" ? 0 : Number(durationRaw.replace(/\D/g, "")) || 0
 
             try {
                 setSavingRowId(id)
@@ -497,9 +497,9 @@ export const PlayBaccaratTable = ({
                     id: row.id,
                     level: getLevel(row),
                     pattern: getPattern(row),
-                    target_profit: Number(getTargetProfit(row)) || null,
+                    target_profit: Number(getTargetProfit(row)) || 0,
                     bet_size: getBetSize(row),
-                    duration: Number(getDuration(row)) || null,
+                    duration: Number(getDuration(row)) || 0,
                     strategy: getStrategy(row),
                     status: newStatus,
                     command: newStatus === "Running"
@@ -508,7 +508,7 @@ export const PlayBaccaratTable = ({
                 onRowUpdate?.({
                     id: row.id,
                     status: newStatus,
-                    duration: Number(getDuration(row)) || null,
+                    duration: Number(getDuration(row)) || 0,
                     // Note: command is not in BaccaratRow type yet, but we update it in DB
                 })
             } catch (error: any) {
@@ -836,40 +836,46 @@ export const PlayBaccaratTable = ({
                                 </div>
                             </TableCell>
                             <TableCell className="text-center text-gray-200 text-xs">
-                                <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    value={
-                                        editingTargetProfitRowId === String(row.id)
-                                            ? editingTargetProfitValue
-                                            : getTargetProfit(row)
-                                    }
-                                    onFocus={() => handleTargetProfitFocus(row)}
-                                    onChange={(e) => handleTargetProfitChange(e.target.value)}
-                                    onBlur={() => handleTargetProfitBlur(row)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter") e.currentTarget.blur()
-                                    }}
-                                    className="w-20 h-7 text-center text-xs text-gray-200 bg-transparent border-0 focus:outline-none focus:ring-0"
-                                />
+                                <div className="flex items-center justify-center gap-1 mx-auto w-fit">
+                                    <input
+                                        type="text"
+                                        inputMode="numeric"
+                                        value={
+                                            editingTargetProfitRowId === String(row.id)
+                                                ? editingTargetProfitValue
+                                                : getTargetProfit(row)
+                                        }
+                                        onFocus={() => handleTargetProfitFocus(row)}
+                                        onChange={(e) => handleTargetProfitChange(e.target.value)}
+                                        onBlur={() => handleTargetProfitBlur(row)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter") e.currentTarget.blur()
+                                        }}
+                                        className="w-12 h-7 text-right text-xs text-gray-200 bg-transparent border-0 focus:outline-none focus:ring-0 p-0"
+                                    />
+                                    <span className="text-gray-400">%</span>
+                                </div>
                             </TableCell>
                             <TableCell className="text-center text-gray-200 text-xs">
-                                <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    value={
-                                        editingDurationRowId === String(row.id)
-                                            ? editingDurationValue
-                                            : getDuration(row)
-                                    }
-                                    onFocus={() => handleDurationFocus(row)}
-                                    onChange={(e) => handleDurationChange(e.target.value)}
-                                    onBlur={() => handleDurationBlur(row)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter") e.currentTarget.blur()
-                                    }}
-                                    className="w-20 h-7 text-center text-xs text-gray-200 bg-transparent border-0 focus:outline-none focus:ring-0"
-                                />
+                                <div className="flex items-center justify-center gap-1 mx-auto w-fit">
+                                    <input
+                                        type="text"
+                                        inputMode="numeric"
+                                        value={
+                                            editingDurationRowId === String(row.id)
+                                                ? editingDurationValue
+                                                : getDuration(row)
+                                        }
+                                        onFocus={() => handleDurationFocus(row)}
+                                        onChange={(e) => handleDurationChange(e.target.value)}
+                                        onBlur={() => handleDurationBlur(row)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter") e.currentTarget.blur()
+                                        }}
+                                        className="w-12 h-7 text-right text-xs text-gray-200 bg-transparent border-0 focus:outline-none focus:ring-0 p-0"
+                                    />
+                                    <span className="text-gray-400">mins</span>
+                                </div>
                             </TableCell>
                             <TableCell className="text-center">
                                 <div className="flex items-center justify-center gap-2">
