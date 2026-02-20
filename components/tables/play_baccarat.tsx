@@ -19,6 +19,13 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Input } from "@/components/ui/input"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { updateBaccaratRow } from "@/helper/baccarat"
 
 export type BaccaratRow = {
@@ -57,8 +64,7 @@ interface PlayBaccaratTableProps {
     onSelectionChange: (selected: Set<string | number>) => void
 }
 
-const getMaxLevel = (betSize: number | string | null | undefined, strategy?: string | null) => {
-    if (strategy === "Sweeper" || strategy === "Burst") return 3
+const getMaxLevel = (betSize: number | string | null | undefined) => {
     const size = Number(betSize)
     if (size === 10) return 14
     if (size === 50) return 12
@@ -67,9 +73,9 @@ const getMaxLevel = (betSize: number | string | null | undefined, strategy?: str
     return 14
 }
 
-const clampLevel = (n: number | null | undefined, betSize?: number | string | null, strategy?: string | null) => {
+const clampLevel = (n: number | null | undefined, betSize?: number | string | null) => {
     if (n === null || n === undefined) return null
-    const maxL = getMaxLevel(betSize, strategy)
+    const maxL = getMaxLevel(betSize)
     const num = Number(n)
     return Math.min(maxL, Math.max(1, num))
 }
@@ -193,17 +199,22 @@ export const PlayBaccaratTable = ({
     const getLevel = useCallback(
         (row: BaccaratRow) => {
             const betSize = getBetSize(row)
-            const strategy = getStrategy(row)
             return row.id in levelByRowId
                 ? levelByRowId[row.id]
-                : clampLevel(row.level, betSize, strategy)
+                : clampLevel(row.level, betSize)
         },
-        [levelByRowId, getBetSize, getStrategy]
+        [levelByRowId, getBetSize]
     )
 
     const setLevel = useCallback((rowId: string | number, value: number | null, betSize?: number | string | null, strategy?: string | null) => {
-        const clamped = value === null ? null : clampLevel(value, betSize, strategy)
-        setLevelByRowId((prev) => ({ ...prev, [String(rowId)]: clamped }))
+        const id = String(rowId)
+        const clamped = value === null ? null : clampLevel(value, betSize)
+        setLevelByRowId((prev) => ({ ...prev, [id]: clamped }))
+
+        // Auto-switch to Standard if Level >= 4 while on Sweeper/Burst
+        if (clamped !== null && clamped >= 4 && (strategy === "Sweeper" || strategy === "Burst")) {
+            setStrategyByRowId((prev) => ({ ...prev, [id]: "Standard" }))
+        }
     }, [])
 
 
@@ -223,9 +234,15 @@ export const PlayBaccaratTable = ({
     const handlePatternSelect = useCallback(
         (rowId: string | number, value: string) => {
             const id = String(rowId)
+            const strategy = getStrategy({ id } as BaccaratRow)
             setPattern(id, value)
+
+            // Auto-switch to Standard if Pattern length >= 4 while on Sweeper/Burst
+            if (value.length >= 4 && (strategy === "Sweeper" || strategy === "Burst")) {
+                setStrategyByRowId((prev) => ({ ...prev, [id]: "Standard" }))
+            }
         },
-        [setPattern]
+        [setPattern, getStrategy]
     )
 
     const getTargetProfit = useCallback(
@@ -333,27 +350,16 @@ export const PlayBaccaratTable = ({
         setLevelByRowId((prevLevels) => {
             const currentLevel = prevLevels[id]
             if (currentLevel === null || currentLevel === undefined) {
-                // Even if not in local state, we should check the row level
-                const row = data.find(r => String(r.id) === id)
-                if (row) {
-                    const betSize = betSizeByRowId[id] ?? row.bet_size
-                    const maxL = getMaxLevel(betSize, value)
-
-                    // If strategy is Burst/Sweeper, null is not allowed, default to 1
-                    if (value === "Burst" || value === "Sweeper") {
-                        return { ...prevLevels, [id]: 1 }
-                    }
-
-                    if (Number(row.level || 0) > maxL) {
-                        return { ...prevLevels, [id]: maxL }
-                    }
+                // If strategy is Burst/Sweeper, null is not allowed, default to 1
+                if (value === "Burst" || value === "Sweeper") {
+                    return { ...prevLevels, [id]: 1 }
                 }
                 return prevLevels
             }
 
             const row = data.find(r => String(r.id) === id)
             const betSize = betSizeByRowId[id] ?? row?.bet_size
-            const maxL = getMaxLevel(betSize, value)
+            const maxL = getMaxLevel(betSize)
 
             // If strategy is Burst/Sweeper, currentLevel (null) is invalid.
             if ((value === "Burst" || value === "Sweeper") && currentLevel === null) {
@@ -370,7 +376,7 @@ export const PlayBaccaratTable = ({
     const hasRowChanges = useCallback(
         (row: BaccaratRow) => {
             const id = String(row.id)
-            if (id in levelByRowId && levelByRowId[id] !== clampLevel(row.level)) return true
+            if (id in levelByRowId && levelByRowId[id] !== clampLevel(row.level, row.bet_size)) return true
             if (id in patternByRowId && patternByRowId[id] !== (row.pattern ?? DEFAULT_PATTERN)) return true
             if (id in targetProfitByRowId && targetProfitByRowId[id] !== (row.target_profit != null ? String(row.target_profit) : "")) return true
             if (id in betSizeByRowId && betSizeByRowId[id] !== (row.bet_size != null ? Number(row.bet_size) : null)) return true
@@ -731,7 +737,7 @@ export const PlayBaccaratTable = ({
                                     <SelectTrigger className="w-20 h-7 text-xs bg-transparent border-[#868686] text-gray-200 justify-center mx-auto">
                                         <SelectValue placeholder="Select" />
                                     </SelectTrigger>
-                                    <SelectContent className="bg-[#1a1a1a] border-gray-800">
+                                    <SelectContent className="bg-[#1a1a1a] border-gray-800" position="popper" side="bottom" sideOffset={4}>
                                         <SelectItem value="10" className="text-gray-200 hover:bg-gray-800">10</SelectItem>
                                         <SelectItem value="50" className="text-gray-200 hover:bg-gray-800">50</SelectItem>
                                         <SelectItem value="100" className="text-gray-200 hover:bg-gray-800">100</SelectItem>
@@ -747,15 +753,28 @@ export const PlayBaccaratTable = ({
                                     <SelectTrigger className="w-16 h-7 text-xs bg-transparent border-[#868686] text-gray-200 justify-center mx-auto">
                                         <SelectValue placeholder="-" />
                                     </SelectTrigger>
-                                    <SelectContent className="bg-[#1a1a1a] border-gray-800">
-                                        {!(getStrategy(row) === "Burst" || getStrategy(row) === "Sweeper") && (
-                                            <SelectItem value="-" className="text-gray-200 hover:bg-gray-800">-</SelectItem>
-                                        )}
-                                        {[...Array(getMaxLevel(getBetSize(row), getStrategy(row)))].map((_, i) => (
-                                            <SelectItem key={i + 1} value={String(i + 1)} className="text-gray-200 hover:bg-gray-800">
-                                                {i + 1}
-                                            </SelectItem>
-                                        ))}
+                                    <SelectContent className="bg-[#1a1a1a] border-gray-800" position="popper" side="bottom" sideOffset={4}>
+                                        <SelectItem
+                                            value="-"
+                                            className="text-gray-200 hover:bg-gray-800"
+                                            disabled={getStrategy(row) === "Burst" || getStrategy(row) === "Sweeper"}
+                                        >
+                                            -
+                                        </SelectItem>
+                                        {[...Array(14)].map((_, i) => {
+                                            const levelNum = i + 1
+                                            const maxAllowed = getMaxLevel(getBetSize(row))
+                                            return (
+                                                <SelectItem
+                                                    key={levelNum}
+                                                    value={String(levelNum)}
+                                                    className="text-gray-200 hover:bg-gray-800"
+                                                    disabled={levelNum > maxAllowed}
+                                                >
+                                                    {levelNum}
+                                                </SelectItem>
+                                            )
+                                        })}
                                     </SelectContent>
                                 </Select>
                             </TableCell>
@@ -767,19 +786,19 @@ export const PlayBaccaratTable = ({
                                     <SelectTrigger className="w-24 h-7 text-xs bg-transparent border-[#868686] text-gray-200 justify-center mx-auto">
                                         <SelectValue placeholder="Select" />
                                     </SelectTrigger>
-                                    <SelectContent className="bg-[#1a1a1a] border-gray-800">
+                                    <SelectContent className="bg-[#1a1a1a] border-gray-800" position="popper" side="bottom" sideOffset={4}>
                                         <SelectItem value="Standard" className="text-gray-200 hover:bg-gray-800">Standard</SelectItem>
                                         <SelectItem
                                             value="Sweeper"
                                             className="text-gray-200 hover:bg-gray-800"
-                                            disabled={(getLevel(row) ?? 0) >= 4}
+                                            disabled={(getLevel(row) ?? 0) >= 4 || (getPattern(row)?.length ?? 0) >= 4}
                                         >
                                             Sweeper
                                         </SelectItem>
                                         <SelectItem
                                             value="Burst"
                                             className="text-gray-200 hover:bg-gray-800"
-                                            disabled={(getLevel(row) ?? 0) >= 4}
+                                            disabled={(getLevel(row) ?? 0) >= 4 || (getPattern(row)?.length ?? 0) >= 4}
                                         >
                                             Burst
                                         </SelectItem>
@@ -788,22 +807,32 @@ export const PlayBaccaratTable = ({
                                 </Select>
                             </TableCell>
                             <TableCell className="text-center text-gray-200 text-xs">
-                                <Select
-                                    value={getPattern(row)}
-                                    onValueChange={(value) => handlePatternSelect(row.id, value)}
-                                >
-                                    <SelectTrigger className="w-28 h-7 text-xs bg-transparent border-[#868686] text-gray-200 justify-center mx-auto">
-                                        <SelectValue placeholder="Select" />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-[#1a1a1a] border-gray-800">
-                                        <SelectItem value="P" className="text-gray-200 hover:bg-gray-800">P</SelectItem>
-                                        <SelectItem value="B" className="text-gray-200 hover:bg-gray-800">B</SelectItem>
-                                        <SelectItem value="PB" className="text-gray-200 hover:bg-gray-800">PB</SelectItem>
-                                        <SelectItem value="BP" className="text-gray-200 hover:bg-gray-800">BP</SelectItem>
-                                        <SelectItem value="PPPB" className="text-gray-200 hover:bg-gray-800">PPPB</SelectItem>
-                                        <SelectItem value="BBBP" className="text-gray-200 hover:bg-gray-800">BBBP</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <div className="relative w-28 mx-auto">
+                                    <Input
+                                        value={getPattern(row)}
+                                        onChange={(e) => handlePatternSelect(row.id, e.target.value)}
+                                        className="h-7 text-xs bg-transparent border-[#868686] text-gray-200 w-full pr-7"
+                                        placeholder="Pattern"
+                                    />
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <button className="absolute right-0 top-0 h-7 w-7 flex items-center justify-center hover:bg-gray-800 rounded-r-md transition-colors">
+                                                <ChevronDown className="h-3 w-3 text-gray-400" />
+                                            </button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent className="bg-[#1a1a1a] border-gray-800" side="bottom" align="end" sideOffset={4}>
+                                            {["P", "B", "PB", "BP", "PPPB", "BBBP"].map((p) => (
+                                                <DropdownMenuItem
+                                                    key={p}
+                                                    className="text-gray-200 hover:bg-gray-800 cursor-pointer text-xs"
+                                                    onClick={() => handlePatternSelect(row.id, p)}
+                                                >
+                                                    {p}
+                                                </DropdownMenuItem>
+                                            ))}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
                             </TableCell>
                             <TableCell className="text-center text-gray-200 text-xs">
                                 <input
