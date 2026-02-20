@@ -45,9 +45,8 @@ export type BaccaratRow = {
 const STATUS_COLORS: Record<string, string> = {
     Running: "#4ADE80",
     Burned: "#D32020",
-    Pending: "#868686",
     Stopped: "#FF8000",
-    "Idle (Remotely Stopped)": "#94A3B8", // Slate-400 for idle
+    "Idle": "#94A3B8", // Slate-400 for idle
 }
 
 function getStatusColor(status: string | null | undefined): string {
@@ -85,9 +84,11 @@ const DEFAULT_PATTERN = ""
 export const generateGamePattern = (level: number | null | undefined, pattern: string | null | undefined) => {
     if (!pattern || level === null || level === undefined) return ""
     const numLevel = Number(level)
+    // Remove existing hyphens to get the clean base pattern
+    const cleanPattern = pattern.replace(/-/g, "")
     let base = ""
     while (base.length < numLevel) {
-        base += pattern
+        base += cleanPattern
     }
     const truncated = base.substring(0, numLevel)
     let result = ""
@@ -206,16 +207,6 @@ export const PlayBaccaratTable = ({
         [levelByRowId, getBetSize]
     )
 
-    const setLevel = useCallback((rowId: string | number, value: number | null, betSize?: number | string | null, strategy?: string | null) => {
-        const id = String(rowId)
-        const clamped = value === null ? null : clampLevel(value, betSize)
-        setLevelByRowId((prev) => ({ ...prev, [id]: clamped }))
-
-        // Auto-switch to Standard if Level >= 4 while on Sweeper/Burst
-        if (clamped !== null && clamped >= 4 && (strategy === "Sweeper" || strategy === "Burst")) {
-            setStrategyByRowId((prev) => ({ ...prev, [id]: "Standard" }))
-        }
-    }, [])
 
 
     const getPattern = useCallback(
@@ -231,10 +222,22 @@ export const PlayBaccaratTable = ({
         setPatternByRowId((prev) => ({ ...prev, [id]: value }))
     }, [])
 
+    const setLevel = useCallback((rowId: string | number, value: number | null, betSize?: number | string | null, strategy?: string | null) => {
+        const id = String(rowId)
+        const clamped = value === null ? null : clampLevel(value, betSize)
+        setLevelByRowId((prev) => ({ ...prev, [id]: clamped }))
+
+        // Auto-switch to Standard if Level >= 4 while on Sweeper/Burst
+        if (clamped !== null && clamped >= 4 && (strategy === "Sweeper" || strategy === "Burst")) {
+            setStrategyByRowId((prev) => ({ ...prev, [id]: "Standard" }))
+        }
+    }, [])
+
     const handlePatternSelect = useCallback(
         (rowId: string | number, value: string) => {
             const id = String(rowId)
             const strategy = getStrategy({ id } as BaccaratRow)
+
             setPattern(id, value)
 
             // Auto-switch to Standard if Pattern length >= 4 while on Sweeper/Burst
@@ -459,8 +462,7 @@ export const PlayBaccaratTable = ({
                     target_profit,
                     bet_size,
                     duration,
-                    strategy: getStrategy(row),
-                    game_pattern: generateGamePattern(level, pattern)
+                    strategy: getStrategy(row)
                 })
 
                 // After successful save, clear local dirty state so row is "clean"
@@ -500,8 +502,7 @@ export const PlayBaccaratTable = ({
                     duration: Number(getDuration(row)) || null,
                     strategy: getStrategy(row),
                     status: newStatus,
-                    command: newStatus === "Running",
-                    game_pattern: generateGamePattern(getLevel(row), getPattern(row))
+                    command: newStatus === "Running"
                 })
 
                 onRowUpdate?.({
@@ -639,7 +640,7 @@ export const PlayBaccaratTable = ({
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
                             <div className="flex items-center justify-center gap-1 select-none">
-                                <span>Traget Profit (%)</span>
+                                <span>Target Profit (%)</span>
                                 <div
                                     className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
                                     onClick={() => handleSort('target_profit')}

@@ -17,7 +17,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { PlayBaccaratTable, type BaccaratRow, generateGamePattern } from "@/components/tables/play_baccarat"
+import { PlayBaccaratTable, type BaccaratRow } from "@/components/tables/play_baccarat"
 import { createClient2 } from "@/lib/supabase/client"
 import { getBaccaratData, updateBaccaratRow } from "@/helper/baccarat"
 import { getFunders } from "@/helper/funders"
@@ -91,8 +91,7 @@ const PlayBacarratPage = () => {
                     target_profit: Number(row.target_profit) || null,
                     bet_size: Number(row.bet_size) || null,
                     status: newStatus,
-                    command: newStatus === "Running",
-                    game_pattern: generateGamePattern(row.level, row.pattern)
+                    command: newStatus === "Running"
                 })
 
                 return { id: row.id, status: newStatus }

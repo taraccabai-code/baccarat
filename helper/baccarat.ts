@@ -89,7 +89,6 @@ type UpdateBaccaratPayload = {
   status?: string | null;
   command?: boolean;
   duration?: number | null;
-  game_pattern?: string | null;
 };
 
 export async function updateBaccaratRow({
@@ -102,7 +101,6 @@ export async function updateBaccaratRow({
   status,
   command,
   duration,
-  game_pattern,
 }: UpdateBaccaratPayload): Promise<void> {
   const supabase = await createClient2();
 
@@ -132,9 +130,6 @@ export async function updateBaccaratRow({
     updateData.duration = duration;
   }
 
-  if (game_pattern !== undefined) {
-    updateData.game_pattern = game_pattern;
-  }
 
   const { error } = await supabase
     .from("bot_monitoring")
