@@ -292,14 +292,21 @@ export const PlayBaccaratTable = ({
 
     const handleBetSizeChange = useCallback((rowId: string | number, value: number) => {
         const id = String(rowId)
+        const row = data.find(r => String(r.id) === id)
+        const currentStrategy = strategyByRowId[id] ?? row?.strategy
+
         setBetSizeByRowId((prev) => ({ ...prev, [id]: value }))
 
         // Automatically set the highest possible level for the new bet size
+        // UNLESS the strategy is Sweeper or Burst, in which case it stays at 3
         setLevelByRowId((prevLevels) => {
+            if (currentStrategy === "Sweeper" || currentStrategy === "Burst") {
+                return { ...prevLevels, [id]: 3 }
+            }
             const maxL = getMaxLevel(value)
             return { ...prevLevels, [id]: maxL }
         })
-    }, [])
+    }, [data, strategyByRowId])
 
     const getDuration = useCallback(
         (row: BaccaratRow) => {
@@ -358,19 +365,9 @@ export const PlayBaccaratTable = ({
                 return { ...prevLevels, [id]: maxL }
             }
 
-            if (currentLevel === null || currentLevel === undefined) {
-                // If strategy is Burst/Sweeper, null is not allowed, default to 1
-                if (value === "Burst" || value === "Sweeper") {
-                    return { ...prevLevels, [id]: 1 }
-                }
-                return prevLevels
-            }
-
-            // Restricted to Level 1-3 for Burst/Sweeper
+            // Force Level 3 for Burst/Sweeper
             if (value === "Burst" || value === "Sweeper") {
-                if (currentLevel === null) return { ...prevLevels, [id]: 1 }
-                if (currentLevel > 3) return { ...prevLevels, [id]: 3 }
-                return prevLevels
+                return { ...prevLevels, [id]: 3 }
             }
 
             if (currentLevel !== null && currentLevel > maxL) {
