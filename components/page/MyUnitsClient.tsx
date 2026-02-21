@@ -12,6 +12,17 @@ import { ArchiveUnitModal } from "@/components/modal/ArchieveUniit"
 import { FranchiseModal } from "@/components/modal/FranchiseModal"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { getFranchises } from '@/helper/franchise'
+import { Franchise } from '@/types/franchise'
+import { Filter, ChevronDown, Check } from 'lucide-react'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
 
 interface MyUnitsClientProps {
     initialUnits: any[];
@@ -27,6 +38,8 @@ export default function MyUnitsClient({ initialUnits }: MyUnitsClientProps) {
     const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
     const [isArchiving, setIsArchiving] = useState(false);
     const [isFranchiseModalOpen, setIsFranchiseModalOpen] = useState(false);
+    const [franchises, setFranchises] = useState<Franchise[]>([]);
+    const [selectedFranchiseId, setSelectedFranchiseId] = useState<string | null>(null);
 
     // Use a ref to prevent multiple simultaneous health checks
     const isCheckingHealth = useRef(false);
@@ -96,12 +109,22 @@ export default function MyUnitsClient({ initialUnits }: MyUnitsClientProps) {
         }
     };
 
+    const fetchFranchises = async () => {
+        try {
+            const data = await getFranchises();
+            setFranchises(data || []);
+        } catch (error) {
+            console.error("Failed to fetch franchises", error);
+        }
+    };
+
     // Run health check on mount (every visit)
     useEffect(() => {
         const unitsWithApi = units.filter((u: any) => u.api_base_url && !u.archived);
         if (unitsWithApi.length > 0) {
             handleHealthCheck(unitsWithApi);
         }
+        fetchFranchises();
     }, []); // Empty dependency array runs once on mount
 
     const handleEdit = (unit: Unit) => {
@@ -152,7 +175,8 @@ export default function MyUnitsClient({ initialUnits }: MyUnitsClientProps) {
             unit.franchise?.name?.toLowerCase().includes(query) ||
             unit.franchise?.code?.toLowerCase().includes(query)
         );
-        return !unit.archived && matchesSearch;
+        const matchesFranchise = !selectedFranchiseId || unit.franchise_id === selectedFranchiseId;
+        return !unit.archived && matchesSearch && matchesFranchise;
     });
 
     return (
@@ -177,6 +201,53 @@ export default function MyUnitsClient({ initialUnits }: MyUnitsClientProps) {
                             value={searchQuery}
                             onChange={setSearchQuery}
                         />
+
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className={cn(
+                                        "h-10 border-gray-800 bg-[#0A0A0A] text-gray-400 hover:text-white hover:bg-gray-900 gap-2 shrink-0 px-4",
+                                        selectedFranchiseId && "border-blue-600/50 bg-blue-600/5 text-blue-400 hover:text-blue-300"
+                                    )}
+                                >
+                                    <Filter className="h-4 w-4" />
+                                    <span className="hidden sm:inline">
+                                        {selectedFranchiseId 
+                                            ? franchises.find(f => f.id === selectedFranchiseId)?.name 
+                                            : "Franchises"}
+                                    </span>
+                                    <ChevronDown className="h-4 w-4 opacity-50" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-56 bg-[#0A0A0A] border-gray-800 text-white">
+                                <DropdownMenuLabel className="text-gray-500 font-bold text-[10px] uppercase tracking-wider">
+                                    Filter by Franchise
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator className="bg-gray-800" />
+                                <DropdownMenuItem 
+                                    onClick={() => setSelectedFranchiseId(null)}
+                                    className="gap-2 focus:bg-gray-900 focus:text-white cursor-pointer"
+                                >
+                                    <div className="w-4 flex items-center justify-center">
+                                        {!selectedFranchiseId && <Check className="h-3 w-3 text-blue-500" />}
+                                    </div>
+                                    All Units
+                                </DropdownMenuItem>
+                                {franchises.map((f) => (
+                                    <DropdownMenuItem 
+                                        key={f.id}
+                                        onClick={() => setSelectedFranchiseId(f.id === selectedFranchiseId ? null : f.id)}
+                                        className="gap-2 focus:bg-gray-900 focus:text-white cursor-pointer"
+                                    >
+                                        <div className="w-4 flex items-center justify-center">
+                                            {selectedFranchiseId === f.id && <Check className="h-3 w-3 text-blue-500" />}
+                                        </div>
+                                        {f.name}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
 
                         <Button
                             onClick={() => setIsFranchiseModalOpen(true)}

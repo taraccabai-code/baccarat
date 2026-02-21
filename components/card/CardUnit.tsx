@@ -4,7 +4,6 @@ import {
     Pencil,
     Archive,
     CircleCheck,
-    ChevronDown,
     Loader2,
     WifiLow,
     Unplug,
@@ -13,12 +12,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { UnitStatus } from "@/types/units";
 
 export interface UnitTag {
@@ -160,35 +153,10 @@ export function UnitCard({
 
                 {/* Actions */}
                 <div className="flex items-center justify-between">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-white hover:bg-gray-700 gap-2 px-2"
-                            >
-                                <StatusIcon className={cn("w-4 h-4", config.color)} />
-                                <span className="text-xs font-medium text-gray-400 capitalize">{status}</span>
-                                <ChevronDown className="w-3 h-3 text-gray-500" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="bg-gray-800 border-gray-700 text-white">
-                            {statuses.map((s) => {
-                                const sCfg = getStatusConfig(s);
-                                const SIcon = sCfg.icon;
-                                return (
-                                    <DropdownMenuItem
-                                        key={s}
-                                        className="hover:bg-gray-700 cursor-pointer gap-2"
-                                        onClick={() => onStatusChange?.(id, s)}
-                                    >
-                                        <SIcon className={cn("w-4 h-4", sCfg.color)} />
-                                        <span className="capitalize">{s}</span>
-                                    </DropdownMenuItem>
-                                );
-                            })}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex items-center gap-2 px-2 py-1">
+                        <StatusIcon className={cn("w-4 h-4", config.color)} />
+                        <span className="text-xs font-medium text-gray-400 capitalize">{status}</span>
+                    </div>
 
                     <div className="flex items-center gap-2">
                         <Button

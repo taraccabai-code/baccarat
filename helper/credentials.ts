@@ -82,6 +82,8 @@ export async function credentialsTable() {
       name,
       username,
       password,
+      franchise_id,
+      franchise:franchise_id(name),
       funder_account!funder_account_credential_id_fkey(
         id,
         package(
