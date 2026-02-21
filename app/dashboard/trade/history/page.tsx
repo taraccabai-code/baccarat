@@ -229,8 +229,6 @@ const TradeHistoryPage = () => {
         const headers = [
             isDaily ? "Date" : "Date/Time",
             "Unit",
-            "Martingale Level",
-            "Bet Size",
             isDaily ? "Starting Day Capital" : "Starting Capital",
             isDaily ? "End Day Capital" : "End Capital",
             isDaily ? "Daily Income" : "Per Game Income",
@@ -250,17 +248,11 @@ const TradeHistoryPage = () => {
                 const commission = income > 0 ? income * 0.05 : 0
                 totalCommission += commission
 
-                const dateStr = row.date ? new Date(row.date).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "numeric",
-                    day: "numeric",
-                }) : "-"
+                const dateStr = row.date ? format(new Date(row.date), "MMM dd, yyyy") : "-"
 
                 const csvRow = [
-                    `"${dateStr}"`,
+                    `"=""${dateStr}"""`,
                     `"${row.pc_name || ""}"`,
-                    row.level || "",
-                    row.bet_size || "",
                     row.start_balance || 0,
                     row.end_balance || 0,
                     income.toFixed(2),
@@ -268,7 +260,7 @@ const TradeHistoryPage = () => {
                 ]
                 csvRows.push(csvRow.join(","))
             })
-            csvRows.push(`"","","","","","Total",${totalIncome.toFixed(2)},${totalCommission.toFixed(2)}`)
+            csvRows.push(`"","","","Total",${totalIncome.toFixed(2)},${totalCommission.toFixed(2)}`)
         } else {
             (displayData as PlayHistory[]).forEach(row => {
                 const perGameIncome = (row.end_balance || 0) - (row.start_balance || 0)
@@ -276,20 +268,11 @@ const TradeHistoryPage = () => {
 
                 totalIncome += perGameIncome
 
-                const dateStr = row.created_at ? new Date(row.created_at).toLocaleString("en-US", {
-                    year: "numeric",
-                    month: "numeric",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "numeric",
-                    hour12: true,
-                }) : "-"
+                const dateStr = row.created_at ? format(new Date(row.created_at), "MMM dd, yyyy hh:mm a") : "-"
 
                 const csvRow = [
-                    `"${dateStr}"`,
+                    `"=""${dateStr}"""`,
                     `"${row.pc_name || ""}"`,
-                    row.level || "",
-                    row.bet_size || "",
                     row.start_balance || 0,
                     row.end_balance || 0,
                     perGameIncome.toFixed(2),
@@ -297,7 +280,7 @@ const TradeHistoryPage = () => {
                 ]
                 csvRows.push(csvRow.join(","))
             })
-            csvRows.push(`"","","","","","Total Income",${totalIncome.toFixed(2)},-`)
+            csvRows.push(`"","","","Total Income",${totalIncome.toFixed(2)},-`)
         }
 
         const csvString = csvRows.join("\n")
