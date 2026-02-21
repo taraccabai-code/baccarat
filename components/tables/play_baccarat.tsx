@@ -48,6 +48,7 @@ const STATUS_COLORS: Record<string, string> = {
     Burned: "#D32020",
     Stopped: "#FF8000",
     "Idle": "#94A3B8", // Slate-400 for idle
+    "Starting": "#cefc01ff"
 }
 
 function getStatusColor(status: string | null | undefined): string {
@@ -896,7 +897,7 @@ export const PlayBaccaratTable = ({
                                         className="text-white text-xs h-5 px-3 rounded-md border-0"
                                         style={{ backgroundColor: row.status === "Running" ? "#D32020" : "#868686" }}
                                         onClick={() => handleStatusChange(row, "Stopped")}
-                                        disabled={savingRowId === String(row.id) || row.status === "Stopped"}
+                                        disabled={savingRowId === String(row.id) || row.status === "Stopped" || row.status === "Burned"}
                                     >
                                         Stop
                                     </Button>
@@ -905,7 +906,7 @@ export const PlayBaccaratTable = ({
                                         className="text-white text-xs h-5 px-3 rounded-md border-0"
                                         style={{ backgroundColor: row.status === "Stopped" ? "#4ADE80" : "#868686" }}
                                         onClick={() => handleStatusChange(row, "Running")}
-                                        disabled={savingRowId === String(row.id) || row.status === "Running"}
+                                        disabled={savingRowId === String(row.id) || row.status === "Running" || row.status === "Burned"}
                                     >
                                         Run
                                     </Button>
