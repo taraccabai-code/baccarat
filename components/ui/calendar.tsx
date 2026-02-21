@@ -16,15 +16,18 @@ function Calendar({
     return (
         <DayPicker
             showOutsideDays={showOutsideDays}
-            className={cn("p-3", className)}
+            className={cn("p-4", className)}
             classNames={{
-                months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-                month: "space-y-4",
+                months: "flex flex-col sm:flex-row space-y-4 sm:space-y-0 justify-center",
+                month: "space-y-4 px-8",
                 month_caption: "flex justify-center pt-1 relative items-center",
                 caption_label: "text-sm font-medium",
                 nav: "space-x-1 flex items-center",
-                button_previous: "absolute left-1 h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 inline-flex items-center justify-center rounded-md border border-gray-700",
-                button_next: "absolute right-1 h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 inline-flex items-center justify-center rounded-md border border-gray-700",
+                nav_button: cn(
+                    "h-7 w-7 bg-transparent p-0 text-white !opacity-100 hover:text-blue-400 hover:bg-gray-800 inline-flex items-center justify-center rounded-md border border-gray-700 z-10 [&_svg]:!text-white [&_svg]:fill-current [&_svg]:stroke-current"
+                ),
+                button_previous: "absolute left-4 h-7 w-7 bg-transparent p-0 !text-white !opacity-100 hover:text-blue-400 hover:bg-gray-800 inline-flex items-center justify-center rounded-md border border-gray-700 z-10 [&_svg]:!text-white [&_svg]:fill-current [&_svg]:stroke-current",
+                button_next: "absolute right-4 h-7 w-7 bg-transparent p-0 !text-white !opacity-100 hover:text-blue-400 hover:bg-gray-800 inline-flex items-center justify-center rounded-md border border-gray-700 z-10 [&_svg]:!text-white [&_svg]:fill-current [&_svg]:stroke-current",
                 month_grid: "w-full border-collapse space-y-1",
                 weekdays: "flex",
                 weekday: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
