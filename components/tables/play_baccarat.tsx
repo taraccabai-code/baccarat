@@ -40,6 +40,7 @@ export type BaccaratRow = {
     bet_size?: number | string | null
     duration?: number | string | null
     strategy?: string | null
+    franchise?: string | null
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -231,6 +232,11 @@ export const PlayBaccaratTable = ({
         if (clamped !== null && clamped >= 4 && (strategy === "Sweeper" || strategy === "Burst")) {
             setStrategyByRowId((prev) => ({ ...prev, [id]: "Standard" }))
         }
+
+        // Auto-switch to Sweeper if Level 3 while on Standard
+        if (clamped === 3 && strategy === "Standard") {
+            setStrategyByRowId((prev) => ({ ...prev, [id]: "Sweeper" }))
+        }
     }, [])
 
     const handlePatternSelect = useCallback(
@@ -287,15 +293,10 @@ export const PlayBaccaratTable = ({
         const id = String(rowId)
         setBetSizeByRowId((prev) => ({ ...prev, [id]: value }))
 
-        // Also clamp the current level if it exceeds the new max level
+        // Automatically set the highest possible level for the new bet size
         setLevelByRowId((prevLevels) => {
-            const currentLevel = prevLevels[id]
-            if (currentLevel === null || currentLevel === undefined) return prevLevels
             const maxL = getMaxLevel(value)
-            if (currentLevel > maxL) {
-                return { ...prevLevels, [id]: maxL }
-            }
-            return prevLevels
+            return { ...prevLevels, [id]: maxL }
         })
     }, [])
 
@@ -340,11 +341,22 @@ export const PlayBaccaratTable = ({
 
     const handleStrategyChange = useCallback((rowId: string | number, value: string) => {
         const id = String(rowId)
+        const row = data.find(r => String(r.id) === id)
+        const oldStrategy = strategyByRowId[id] ?? row?.strategy
+
         setStrategyByRowId((prev) => ({ ...prev, [id]: value }))
 
         // Also clamp the current level if it exceeds the new max level
         setLevelByRowId((prevLevels) => {
             const currentLevel = prevLevels[id]
+            const betSize = betSizeByRowId[id] ?? row?.bet_size
+            const maxL = getMaxLevel(betSize)
+
+            // If switching from Sweeper to Standard, select the highest Level
+            if (oldStrategy === "Sweeper" && value === "Standard") {
+                return { ...prevLevels, [id]: maxL }
+            }
+
             if (currentLevel === null || currentLevel === undefined) {
                 // If strategy is Burst/Sweeper, null is not allowed, default to 1
                 if (value === "Burst" || value === "Sweeper") {
@@ -352,10 +364,6 @@ export const PlayBaccaratTable = ({
                 }
                 return prevLevels
             }
-
-            const row = data.find(r => String(r.id) === id)
-            const betSize = betSizeByRowId[id] ?? row?.bet_size
-            const maxL = getMaxLevel(betSize)
 
             // Restricted to Level 1-3 for Burst/Sweeper
             if (value === "Burst" || value === "Sweeper") {
@@ -369,7 +377,7 @@ export const PlayBaccaratTable = ({
             }
             return prevLevels
         })
-    }, [betSizeByRowId, data])
+    }, [betSizeByRowId, data, strategyByRowId])
 
     const hasRowChanges = useCallback(
         (row: BaccaratRow) => {
@@ -545,6 +553,11 @@ export const PlayBaccaratTable = ({
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
                             <div className="flex items-center justify-center gap-1 select-none">
+                                <span>Franchise</span>
+                            </div>
+                        </TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
+                            <div className="flex items-center justify-center gap-1 select-none">
                                 <span>Status</span>
                                 <div
                                     className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
@@ -560,7 +573,7 @@ export const PlayBaccaratTable = ({
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
                             <div className="flex items-center justify-center gap-1 select-none">
-                                <span>User Balance</span>
+                                <span>User Bal</span>
                                 <div
                                     className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
                                     onClick={() => handleSort('user_balance')}
@@ -635,7 +648,7 @@ export const PlayBaccaratTable = ({
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
                             <div className="flex items-center justify-center gap-1 select-none">
-                                <span>Target Profit (%)</span>
+                                <span>TP (%)</span>
                                 <div
                                     className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
                                     onClick={() => handleSort('target_profit')}
@@ -650,7 +663,7 @@ export const PlayBaccaratTable = ({
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
                             <div className="flex items-center justify-center gap-1 select-none">
-                                <span>Duration (mins.)</span>
+                                <span>Timer (mins)</span>
                                 <div
                                     className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
                                     onClick={() => handleSort('duration')}
@@ -707,6 +720,9 @@ export const PlayBaccaratTable = ({
                             </TableCell>
                             <TableCell className="text-center text-gray-200 text-xs">
                                 {row.units ?? ""}
+                            </TableCell>
+                            <TableCell className="text-center text-gray-200 text-xs">
+                                {/* Franchise column - empty for now */}
                             </TableCell>
                             <TableCell className="text-center text-gray-200 text-xs">
                                 <div className="flex items-center justify-center gap-2">
@@ -767,7 +783,7 @@ export const PlayBaccaratTable = ({
                                                     className="text-gray-200 hover:bg-gray-800"
                                                     disabled={
                                                         levelNum > maxAllowed ||
-                                                        ((getStrategy(row) === "Burst" || getStrategy(row) === "Sweeper") && levelNum > 3)
+                                                        (getStrategy(row) === "Burst" && levelNum > 3)
                                                     }
                                                 >
                                                     {levelNum}
