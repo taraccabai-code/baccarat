@@ -6,8 +6,10 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Unit, UnitStatus } from "@/types/units"
 import { Franchise } from "@/types/franchise"
+import { Credential } from "@/types/credentials"
 import { getFranchises } from "@/helper/franchise"
 import { createUnit, updateUnit, getUnits, updateUnitConfig } from "@/helper/units"
+import { getCredentials } from "@/helper/credentials"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
 import { BETTING_SITES } from "@/data/bettingSites"
@@ -26,27 +28,29 @@ export function UnitForm({ initialData, onSuccess, franchises: initialFranchises
     const [isLoading, setIsLoading] = useState(false)
     const [franchises, setFranchises] = useState<Franchise[]>(initialFranchises || [])
     const [units, setUnits] = useState<Unit[]>(initialUnits || [])
+    const [credentials, setCredentials] = useState<Credential[]>([])
 
     const [formData, setFormData] = useState({
         unit_name: initialData?.unit_name || "",
         api_base_url: initialData?.api_base_url || "",
         franchise_id: initialData?.franchise_id || "",
         status: initialData?.status || "disabled" as UnitStatus,
-        platform: initialData?.platform || ""
+        platform: initialData?.platform || "",
+        credential_id: initialData?.credential_id || ""
     })
 
     useEffect(() => {
-        if (!initialFranchises || !initialUnits) {
-            const fetchData = async () => {
-                const [franchiseData, unitData] = await Promise.all([
-                    !initialFranchises ? getFranchises() : Promise.resolve(initialFranchises),
-                    !initialUnits ? getUnits() : Promise.resolve(initialUnits)
-                ])
-                if (!initialFranchises) setFranchises(franchiseData)
-                if (!initialUnits) setUnits(unitData)
-            }
-            fetchData()
+        const fetchData = async () => {
+            const [franchiseData, unitData, credentialData] = await Promise.all([
+                !initialFranchises ? getFranchises() : Promise.resolve(initialFranchises),
+                !initialUnits ? getUnits() : Promise.resolve(initialUnits),
+                getCredentials()
+            ])
+            if (!initialFranchises) setFranchises(franchiseData)
+            if (!initialUnits) setUnits(unitData)
+            setCredentials(credentialData as Credential[])
         }
+        fetchData()
     }, [initialFranchises, initialUnits])
 
     const selectedFranchise = franchises.find(f => f.id === formData.franchise_id)
@@ -134,6 +138,23 @@ export function UnitForm({ initialData, onSuccess, franchises: initialFranchises
                         {franchises.map((f) => (
                             <option key={f.id} value={f.id}>
                                 {f.name} ({f.code})
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="credential_id">User</Label>
+                    <select
+                        id="credential_id"
+                        value={formData.credential_id || ""}
+                        onChange={(e) => setFormData({ ...formData, credential_id: e.target.value })}
+                        className="flex h-10 w-full rounded-md border border-[#1a1a1a] bg-[#050505] px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 focus:border-blue-500/50"
+                    >
+                        <option value="">No user assigned</option>
+                        {credentials.map((c) => (
+                            <option key={c.id} value={c.id}>
+                                {c.name}
                             </option>
                         ))}
                     </select>

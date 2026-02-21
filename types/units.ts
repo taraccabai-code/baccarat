@@ -12,6 +12,7 @@ export interface Unit {
     franchise?: Franchise;
     is_occupied: boolean;
     platform: string | null;
+    credential_id: string | null;
 }
 
 export type CreateUnit = Omit<
