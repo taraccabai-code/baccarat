@@ -34,7 +34,7 @@ const TradeHistoryPage = () => {
     const [selectedFranchise, setSelectedFranchise] = useState("All")
 
     // Date filter state
-    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
+    const [dateRange, setDateRange] = useState<DateRange | undefined>({ from: new Date(), to: new Date() })
     const [datePopoverOpen, setDatePopoverOpen] = useState(false)
 
     // Income view mode state
@@ -229,8 +229,6 @@ const TradeHistoryPage = () => {
         const headers = [
             isDaily ? "Date" : "Date/Time",
             "Unit",
-            "Martingale Level",
-            "Bet Size",
             isDaily ? "Starting Day Capital" : "Starting Capital",
             isDaily ? "End Day Capital" : "End Capital",
             isDaily ? "Daily Income" : "Per Game Income",
@@ -250,17 +248,11 @@ const TradeHistoryPage = () => {
                 const commission = income > 0 ? income * 0.05 : 0
                 totalCommission += commission
 
-                const dateStr = row.date ? new Date(row.date).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "numeric",
-                    day: "numeric",
-                }) : "-"
+                const dateStr = row.date ? format(new Date(row.date), "MMM dd, yyyy") : "-"
 
                 const csvRow = [
-                    `"${dateStr}"`,
+                    `"=""${dateStr}"""`,
                     `"${row.pc_name || ""}"`,
-                    row.level || "",
-                    row.bet_size || "",
                     row.start_balance || 0,
                     row.end_balance || 0,
                     income.toFixed(2),
@@ -268,7 +260,7 @@ const TradeHistoryPage = () => {
                 ]
                 csvRows.push(csvRow.join(","))
             })
-            csvRows.push(`"","","","","","Total",${totalIncome.toFixed(2)},${totalCommission.toFixed(2)}`)
+            csvRows.push(`"","","","Total",${totalIncome.toFixed(2)},${totalCommission.toFixed(2)}`)
         } else {
             (displayData as PlayHistory[]).forEach(row => {
                 const perGameIncome = (row.end_balance || 0) - (row.start_balance || 0)
@@ -276,20 +268,11 @@ const TradeHistoryPage = () => {
 
                 totalIncome += perGameIncome
 
-                const dateStr = row.created_at ? new Date(row.created_at).toLocaleString("en-US", {
-                    year: "numeric",
-                    month: "numeric",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "numeric",
-                    hour12: true,
-                }) : "-"
+                const dateStr = row.created_at ? format(new Date(row.created_at), "MMM dd, yyyy hh:mm a") : "-"
 
                 const csvRow = [
-                    `"${dateStr}"`,
+                    `"=""${dateStr}"""`,
                     `"${row.pc_name || ""}"`,
-                    row.level || "",
-                    row.bet_size || "",
                     row.start_balance || 0,
                     row.end_balance || 0,
                     perGameIncome.toFixed(2),
@@ -297,7 +280,7 @@ const TradeHistoryPage = () => {
                 ]
                 csvRows.push(csvRow.join(","))
             })
-            csvRows.push(`"","","","","","Total Income",${totalIncome.toFixed(2)},-`)
+            csvRows.push(`"","","","Total Income",${totalIncome.toFixed(2)},-`)
         }
 
         const csvString = csvRows.join("\n")
@@ -437,7 +420,31 @@ const TradeHistoryPage = () => {
                         <Calendar
                             mode="range"
                             selected={dateRange}
-                            onSelect={setDateRange}
+                            onSelect={(range) => {
+                                // If current range is the default "today" range, and we're picking something else,
+                                // start a fresh selection from the new date.
+                                const todayStr = format(new Date(), "yyyy-MM-dd")
+                                const isDefaultRange = dateRange?.from && dateRange?.to &&
+                                    format(dateRange.from, "yyyy-MM-dd") === todayStr &&
+                                    format(dateRange.to, "yyyy-MM-dd") === todayStr
+
+                                if (isDefaultRange && range?.from && range?.to) {
+                                    // If range changed from default today to something else, 
+                                    // check which one is the "new" date.
+                                    const fromStr = format(range.from, "yyyy-MM-dd")
+                                    const toStr = format(range.to, "yyyy-MM-dd")
+                                    
+                                    if (fromStr !== todayStr) {
+                                        setDateRange({ from: range.from, to: undefined })
+                                    } else if (toStr !== todayStr) {
+                                        setDateRange({ from: range.to, to: undefined })
+                                    } else {
+                                        setDateRange(range)
+                                    }
+                                } else {
+                                    setDateRange(range)
+                                }
+                            }}
                             autoFocus
                             numberOfMonths={2}
                             className="text-white"
@@ -446,17 +453,25 @@ const TradeHistoryPage = () => {
                                 range_start: "bg-blue-600 text-white rounded-l-md",
                                 range_end: "bg-blue-600 text-white rounded-r-md",
                                 range_middle: "bg-blue-600/20 text-blue-200",
-                                today: "bg-gray-800 text-white rounded-md",
+                                today: "bg-gray-800 text-white rounded-md underline decoration-blue-500 underline-offset-4",
                                 day_button: "h-9 w-9 p-0 font-normal text-gray-200 hover:bg-gray-800 rounded-md",
                                 weekday: "text-gray-500 rounded-md w-9 font-normal text-[0.8rem]",
                                 caption_label: "text-sm font-medium text-white",
-                                button_previous: "h-7 w-7 bg-transparent p-0 text-gray-400 hover:text-white border border-gray-700 rounded-md hover:bg-gray-800 inline-flex items-center justify-center absolute left-1",
-                                button_next: "h-7 w-7 bg-transparent p-0 text-gray-400 hover:text-white border border-gray-700 rounded-md hover:bg-gray-800 inline-flex items-center justify-center absolute right-1",
                                 month_grid: "w-full border-collapse",
                                 day: "h-9 w-9 text-center text-sm p-0",
                                 outside: "text-gray-700 opacity-50",
                             }}
                         />
+                        <div className="px-3 pb-3 flex justify-end">
+                            <button
+                                className="text-xs text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-md transition-colors"
+                                onClick={() => {
+                                    setDateRange({ from: new Date(), to: new Date() })
+                                }}
+                            >
+                                Clear Date
+                            </button>
+                        </div>
                     </PopoverContent>
                 </Popover>
                 {/* Search input */}
