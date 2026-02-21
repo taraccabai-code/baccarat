@@ -70,7 +70,7 @@ const getMaxLevel = (betSize: number | string | null | undefined) => {
     if (size === 10) return 14
     if (size === 50) return 12
     if (size === 100) return 11
-    if (size === 200) return 10
+    if (size === 200) return 14
     return 14
 }
 

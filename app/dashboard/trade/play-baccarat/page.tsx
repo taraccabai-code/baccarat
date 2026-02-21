@@ -179,6 +179,11 @@ const PlayBacarratPage = () => {
             result = result.filter(row => row.status === statusFilter)
         }
 
+        // Pattern Filter
+        if (selectedFilter !== "All") {
+            result = result.filter(row => row.pattern === selectedFilter)
+        }
+
         // Search Query
         if (!searchQuery.trim()) return result
 
@@ -211,15 +216,44 @@ const PlayBacarratPage = () => {
 
     return (
         <div className="w-full h-full p-6">
-            <div className="flex flex-row items-start gap-6">
-                <div className="w-48 hidden flex-col gap-4">
+            <div className="flex-1 flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                        <Input
+                            placeholder="Search"
+                            className="pl-10 h-9 bg-[#0a0a0a] border-gray-800 text-white placeholder:text-gray-500 rounded-md focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:border-blue-500"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            className="bg-[#4ADE80] hover:bg-[#22c55e] text-white font-semibold h-9 px-6 rounded-md disabled:opacity-50"
+                            onClick={() => handleBulkStatusChange("Running")}
+                            disabled={selectedRows.size === 0 || loading || isUpdating}
+                        >
+                            Run
+                        </Button>
+                        <Button
+                            className="bg-[#D32020] hover:bg-[#b91c1c] text-white font-semibold h-9 px-6 rounded-md disabled:opacity-50"
+                            onClick={() => handleBulkStatusChange("Stopped")}
+                            disabled={selectedRows.size === 0 || loading || isUpdating}
+                        >
+                            Stop
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Filter Row */}
+                <div className="flex items-center gap-4">
                     <div className="w-48">
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="w-full bg-[#0a0a0a] border-gray-800 text-white">
+                            <SelectTrigger className="w-full bg-[#0a0a0a] border-gray-800 text-white h-9">
                                 <SelectValue placeholder="Status" />
                             </SelectTrigger>
-                            <SelectContent className="bg-[#1a1a1a] border-gray-800 text-white">
-                                <SelectItem value="all">All Status</SelectItem>
+                            <SelectContent className="bg-[#1a1a1a] border-gray-800 text-white" position="popper" side="bottom">
+                                <SelectItem value="all">Status</SelectItem>
                                 <SelectItem value="Running">Running</SelectItem>
                                 <SelectItem value="Burned">Burned</SelectItem>
                                 <SelectItem value="Stopped">Stopped</SelectItem>
@@ -228,14 +262,30 @@ const PlayBacarratPage = () => {
                             </SelectContent>
                         </Select>
                     </div>
+                    <div className="w-48">
+                        <Select value={selectedFilter} onValueChange={setSelectedFilter}>
+                            <SelectTrigger className="w-full bg-[#0a0a0a] border-gray-800 text-white h-9">
+                                <SelectValue placeholder="Search Category" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-[#1a1a1a] border-gray-800 text-white" position="popper" side="bottom">
+                                <SelectItem value="All">Pattern</SelectItem>
+                                <SelectItem value="P">P</SelectItem>
+                                <SelectItem value="B">B</SelectItem>
+                                <SelectItem value="PB">PB</SelectItem>
+                                <SelectItem value="BP">BP</SelectItem>
+                                <SelectItem value="PPPB">PPPB</SelectItem>
+                                <SelectItem value="BBBP">BBBP</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
 
                     <div className="w-48">
                         <Select value={selectedFunder} onValueChange={setSelectedFunder}>
-                            <SelectTrigger className="w-full bg-[#0a0a0a] border-gray-800 text-white">
+                            <SelectTrigger className="w-full bg-[#0a0a0a] border-gray-800 text-white h-9">
                                 <SelectValue placeholder="Funder" />
                             </SelectTrigger>
-                            <SelectContent className="bg-[#1a1a1a] border-gray-800 text-white">
-                                <SelectItem value="all">All Funders</SelectItem>
+                            <SelectContent className="bg-[#1a1a1a] border-gray-800 text-white" position="popper" side="bottom">
+                                <SelectItem value="all">Franchise</SelectItem>
                                 {funders.map((funder) => (
                                     <SelectItem key={funder.id} value={funder.name}>
                                         {funder.name}
@@ -246,88 +296,14 @@ const PlayBacarratPage = () => {
                     </div>
                 </div>
 
-                <div className="flex-1 flex flex-col gap-4">
-                    <div className="flex items-center gap-3">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button
-                                    variant="default"
-                                    size="sm"
-                                    className="bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-medium w-28 h-9 rounded-md border-0 flex items-center justify-between gap-2"
-                                >
-                                    {selectedFilter}
-                                    <ChevronDown className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start" className="bg-[#1a1a1a] border-gray-800 text-white">
-                                <DropdownMenuItem
-                                    className="hover:bg-gray-800 cursor-pointer"
-                                    onClick={() => setSelectedFilter("All")}
-                                >
-                                    All
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    className="hover:bg-gray-800 cursor-pointer"
-                                    onClick={() => setSelectedFilter("Units")}
-                                >
-                                    Units
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    className="hover:bg-gray-800 cursor-pointer"
-                                    onClick={() => setSelectedFilter("Level")}
-                                >
-                                    Level
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    className="hover:bg-gray-800 cursor-pointer"
-                                    onClick={() => setSelectedFilter("Pattern")}
-                                >
-                                    Pattern
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    className="hover:bg-gray-800 cursor-pointer"
-                                    onClick={() => setSelectedFilter("Status")}
-                                >
-                                    Status
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                        <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                            <Input
-                                placeholder="Search"
-                                className="pl-10 h-9 bg-[#0a0a0a] border-gray-800 text-white placeholder:text-gray-500 rounded-md focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:border-blue-500"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Button
-                                className="bg-[#4ADE80] hover:bg-[#22c55e] text-white font-semibold h-9 px-6 rounded-md disabled:opacity-50"
-                                onClick={() => handleBulkStatusChange("Running")}
-                                disabled={selectedRows.size === 0 || loading || isUpdating}
-                            >
-                                Run
-                            </Button>
-                            <Button
-                                className="bg-[#D32020] hover:bg-[#b91c1c] text-white font-semibold h-9 px-6 rounded-md disabled:opacity-50"
-                                onClick={() => handleBulkStatusChange("Stopped")}
-                                disabled={selectedRows.size === 0 || loading || isUpdating}
-                            >
-                                Stop
-                            </Button>
-                        </div>
-                    </div>
-
-                    <PlayBaccaratTable
-                        data={filteredRows}
-                        loading={loading}
-                        error={error}
-                        onRowUpdate={handleUpdateRow}
-                        selectedRows={selectedRows}
-                        onSelectionChange={setSelectedRows}
-                    />
-                </div>
+                <PlayBaccaratTable
+                    data={filteredRows}
+                    loading={loading}
+                    error={error}
+                    onRowUpdate={handleUpdateRow}
+                    selectedRows={selectedRows}
+                    onSelectionChange={setSelectedRows}
+                />
             </div>
         </div>
     )

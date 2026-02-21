@@ -4,7 +4,7 @@ import React, { Suspense, useState, useEffect } from 'react'
 import { getPlatformWebsites, PlatformWebsiteRecord } from '@/helper/platform_websites'
 import { SearchBarHeader } from '@/components/ui/search-bar-header'
 import { BettingPlatformTable } from '@/components/tables/betting_platforms'
-import { FundersTableSkeleton } from '@/components/skeleton/FundersTableSkeleton'
+import { FundersTableSkeleton } from '@/components/skeleton/PlatformSkeleton'
 import { FunderModal } from '@/components/modal/FunderModal'
 
 const FundersPage = () => {
