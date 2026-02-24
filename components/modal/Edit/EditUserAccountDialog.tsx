@@ -9,10 +9,11 @@ import { useRouter } from 'next/navigation'
 interface EditUserAccountDialogProps {
     account: any
     units?: any[]
+    franchises?: any[]
     setAccounts: React.Dispatch<React.SetStateAction<any[]>>
 }
 
-export const EditUserAccountDialog = ({ account, units = [], setAccounts }: EditUserAccountDialogProps) => {
+export const EditUserAccountDialog = ({ account, units = [], franchises = [], setAccounts }: EditUserAccountDialogProps) => {
     const [open, setOpen] = useState(false)
     const router = useRouter()
 
@@ -39,6 +40,7 @@ export const EditUserAccountDialog = ({ account, units = [], setAccounts }: Edit
                 <UserAccountsForm
                     initialData={account}
                     units={units}
+                    franchises={franchises}
                     setAccounts={setAccounts}
                     onSuccess={handleSuccess}
                     onCancel={() => setOpen(false)}

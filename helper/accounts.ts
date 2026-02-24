@@ -7,7 +7,7 @@ export async function getAccounts() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("accounts")
-    .select("*, units(*)")
+    .select("*, units(*, franchise(*))")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -81,7 +81,10 @@ export async function accountsTable() {
     .from("accounts")
     .select(`
       *,
-      units(unit_name),
+      units(
+        unit_name,
+        franchise(name)
+      ),
       funder_accounts:funder_account(*)
     `)
     .order("created_at", { ascending: false });

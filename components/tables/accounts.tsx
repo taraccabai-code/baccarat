@@ -29,17 +29,18 @@ interface Account {
     contact_number_2: string
     id_type: string
     billing: string
-    units?: { unit_name: string } | null
+    units?: { unit_name: string, franchise?: { name: string } } | null
     [key: string]: any
 }
 
 interface AccountsTableProps {
     data: Account[]
     units?: any[]
+    franchises?: any[]
     setAccounts: React.Dispatch<React.SetStateAction<any[]>>
 }
 
-export const AccountsTable = ({ data, units = [], setAccounts }: AccountsTableProps) => {
+export const AccountsTable = ({ data, units = [], franchises = [], setAccounts }: AccountsTableProps) => {
     const [selectedAccount, setSelectedAccount] = useState<{ id: string, name: string } | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -78,7 +79,7 @@ export const AccountsTable = ({ data, units = [], setAccounts }: AccountsTablePr
                 <TableHeader className="bg-[#0d0d0d] border-[#1a1a1a]">
                     <TableRow className="border-[#1a1a1a] hover:bg-transparent">
                         <TableHead className="w-[100px] text-muted-foreground font-medium text-sm pb-4">ACTIONS</TableHead>
-                        <TableHead className="text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">SERVER UNIT</TableHead>
+                        <TableHead className="text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">FRANCHISE</TableHead>
                         <TableHead className="text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">FIRST NAME</TableHead>
                         <TableHead className="text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">MIDDLE NAME</TableHead>
                         <TableHead className="text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">LAST NAME</TableHead>
@@ -86,14 +87,12 @@ export const AccountsTable = ({ data, units = [], setAccounts }: AccountsTablePr
                         <TableHead className="text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">ADDRESS</TableHead>
                         <TableHead className="text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">CONTACT NUMBER 1</TableHead>
                         <TableHead className="text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">CONTACT NUMBER 2</TableHead>
-                        <TableHead className="text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">ID TYPE</TableHead>
-                        <TableHead className="text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">BILLING</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {data.length === 0 ? (
                         <TableRow className="border-[#1a1a1a]">
-                            <TableCell colSpan={11} className="h-24 text-center text-muted-foreground">
+                            <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
                                 No accounts found.
                             </TableCell>
                         </TableRow>
@@ -102,7 +101,7 @@ export const AccountsTable = ({ data, units = [], setAccounts }: AccountsTablePr
                             <TableRow key={account.id} className="border-[#1a1a1a] hover:bg-[#111] transition-colors">
                                 <TableCell className="py-4">
                                     <div className="flex items-center gap-2">
-                                        <EditUserAccountDialog account={account} units={units} setAccounts={setAccounts} />
+                                        <EditUserAccountDialog account={account} units={units} franchises={franchises} setAccounts={setAccounts} />
                                         <Button
                                             variant="ghost"
                                             size="icon"
@@ -113,7 +112,7 @@ export const AccountsTable = ({ data, units = [], setAccounts }: AccountsTablePr
                                         </Button>
                                     </div>
                                 </TableCell>
-                                <TableCell className="text-white py-4">{account.units?.unit_name || "-"}</TableCell>
+                                <TableCell className="text-white py-4">{account.units?.franchise?.name || "-"}</TableCell>
                                 <TableCell className="text-white py-4">{account.first_name}</TableCell>
                                 <TableCell className="text-white py-4">{account.middle_name || "-"}</TableCell>
                                 <TableCell className="text-white py-4">{account.last_name}</TableCell>
@@ -125,8 +124,6 @@ export const AccountsTable = ({ data, units = [], setAccounts }: AccountsTablePr
                                 </TableCell>
                                 <TableCell className="text-white py-4">{account.contact_number || "-"}</TableCell>
                                 <TableCell className="text-white py-4">{account.contact_number_2 || "-"}</TableCell>
-                                <TableCell className="text-white py-4">{account.id_type || "-"}</TableCell>
-                                <TableCell className="text-white py-4">{account.billing || "-"}</TableCell>
                             </TableRow>
                         ))
                     )}

@@ -7,11 +7,16 @@ export async function getCredentials() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("credentials")
-    .select("*, funder_account!funder_account_credential_id_fkey(*)")
+    .select("*")
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching credentials:", error);
+    console.error("Error fetching credentials:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+    });
     return [];
   }
   return data;
@@ -76,26 +81,16 @@ export async function credentialsTable() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("credentials")
-    .select(
-      `
-      id,
-      name,
-      username,
-      password,
-      franchise_id,
-      franchise:franchise_id(name),
-      funder_account!funder_account_credential_id_fkey(
-        id,
-        package(
-          funders(name, allias, allias_color, text_color)
-        )
-      )
-    `,
-    )
+    .select("*")
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching credentials table data:", error);
+    console.error("Error fetching credentials table data:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+    });
     return [];
   }
   return data;

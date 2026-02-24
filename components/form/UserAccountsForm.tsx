@@ -26,9 +26,7 @@ const userAccountSchema = z.object({
     city: z.string().optional(),
     province: z.string().optional(),
     zip_code: z.string().optional(),
-    id_type: z.string().min(1, "ID type is required"),
-    billing: z.string().min(1, "Billing is required"),
-    unit_id: z.string().min(1, "Unit is required"),
+    franchise_id: z.string().optional(),
 })
 
 type UserAccountFormValues = z.infer<typeof userAccountSchema>
@@ -36,12 +34,13 @@ type UserAccountFormValues = z.infer<typeof userAccountSchema>
 interface UserAccountsFormProps {
     initialData?: any | null
     units?: any[]
+    franchises?: any[]
     setAccounts: React.Dispatch<React.SetStateAction<any[]>>
     onSuccess?: () => void
     onCancel?: () => void
 }
 
-export const UserAccountsForm = ({ initialData, units = [], setAccounts, onSuccess, onCancel }: UserAccountsFormProps) => {
+export const UserAccountsForm = ({ initialData, units = [], franchises = [], setAccounts, onSuccess, onCancel }: UserAccountsFormProps) => {
     const router = useRouter()
     const [isPending, setIsPending] = React.useState(false)
     const isUpdate = !!initialData
@@ -67,9 +66,7 @@ export const UserAccountsForm = ({ initialData, units = [], setAccounts, onSucce
             city: initialData?.city || "",
             province: initialData?.province || "",
             zip_code: initialData?.zip_code || "",
-            id_type: initialData?.id_type || "",
-            billing: initialData?.billing || "",
-            unit_id: initialData?.unit_id || "",
+            franchise_id: initialData?.franchise_id || "",
         },
     })
 
@@ -91,11 +88,9 @@ export const UserAccountsForm = ({ initialData, units = [], setAccounts, onSucce
                 }
             });
 
-            const unit = units.find(u => u.id === data.unit_id);
             const optimisticAccount = {
                 ...initialData,
                 ...sanitizedData,
-                units: unit ? { unit_name: unit.unit_name } : initialData?.units,
                 id: initialData?.id || `temp-${Date.now()}`
             };
 
@@ -292,74 +287,30 @@ export const UserAccountsForm = ({ initialData, units = [], setAccounts, onSucce
                     </div>
                 </div>
 
-                {/* ID TYPE */}
+                {/* FRANCHISE */}
                 <div className="space-y-2">
-                    <Label htmlFor="id_type" className="text-white">ID TYPE</Label>
+                    <Label htmlFor="franchise_id" className="text-white">FRANCHISE</Label>
                     <div className="relative">
                         <select
-                            id="id_type"
-                            {...register("id_type")}
-                            className="flex h-10 w-full rounded-md border border-gray-700 bg-gray-800 text-white px-3 py-1 text-sm appearance-none focus:border-blue-500 transition-colors"
-                        >
-                            <option value="">-- Select ID Type --</option>
-                            <option value="National ID">National ID</option>
-                            <option value="Passport">Passport</option>
-                            <option value="Driver's License">Driver's License</option>
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                    </div>
-                    {errors.id_type && <p className="text-xs text-red-500">{errors.id_type.message}</p>}
-                </div>
-
-                {/* BILLING */}
-                <div className="space-y-2">
-                    <Label htmlFor="billing" className="text-white">BILLING</Label>
-                    <Input
-                        id="billing"
-                        {...register("billing")}
-                        className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
-                        placeholder="Enter billing address/info"
-                    />
-                    {errors.billing && <p className="text-xs text-red-500">{errors.billing.message}</p>}
-                </div>
-
-                {/* UNIT */}
-                <div className="space-y-2">
-                    <Label htmlFor="unit_id" className="text-white">UNIT</Label>
-                    <div className="relative">
-                        <select
-                            id="unit_id"
-                            {...register("unit_id", {
-                                onChange: (e) => {
-                                    const selectedUnitId = e.target.value;
-                                    const unit = units.find(u => u.id === selectedUnitId);
-                                    if (unit?.is_occupied && unit.id !== initialData?.unit_id) {
-                                        toast.error(`${unit.unit_name} is already occupied. Please select another unit.`);
-                                        // Reset to original value or empty
-                                        setValue("unit_id", initialData?.unit_id || "");
-                                    }
-                                }
-                            })}
+                            id="franchise_id"
+                            {...register("franchise_id")}
                             className="flex h-10 w-full rounded-md border border-gray-700 bg-gray-800 text-white px-3 py-1 text-sm appearance-none focus:border-blue-500 transition-colors shadow-inner"
                         >
-                            <option value="">-- Select Unit --</option>
-                            {units
-                                .map((unit) => {
-                                    const isOccupied = unit.is_occupied && unit.id !== initialData?.unit_id;
-                                    return (
-                                        <option
-                                            key={unit.id}
-                                            value={unit.id}
-                                            className={isOccupied ? "text-gray-500" : "text-white"}
-                                        >
-                                            {unit.unit_name} {isOccupied ? "(Occupied)" : ""}
-                                        </option>
-                                    );
-                                })}
+                            <option value="">-- Select Franchise --</option>
+                            {franchises
+                                .map((franchise) => (
+                                    <option
+                                        key={franchise.id}
+                                        value={franchise.id}
+                                        className="text-white"
+                                    >
+                                        {franchise.name}
+                                    </option>
+                                ))}
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                     </div>
-                    {errors.unit_id && <p className="text-xs text-red-500">{errors.unit_id.message}</p>}
+                    {errors.franchise_id && <p className="text-xs text-red-500">{errors.franchise_id.message}</p>}
                 </div>
 
                 <div className="flex justify-end gap-3 pt-6 border-t border-gray-800">
