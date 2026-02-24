@@ -23,13 +23,13 @@ interface Account {
     first_name: string
     middle_name: string
     last_name: string
-    email: string
+    email?: string
     address: string
-    contact_number: string
-    contact_number_2: string
+    contact_number_1: string | number
+    contact_number_2: string | number
+    franchise?: string
     id_type: string
     billing: string
-    units?: { unit_name: string, franchise?: { name: string } } | null
     [key: string]: any
 }
 
@@ -112,17 +112,17 @@ export const AccountsTable = ({ data, units = [], franchises = [], setAccounts }
                                         </Button>
                                     </div>
                                 </TableCell>
-                                <TableCell className="text-white py-4">{account.units?.franchise?.name || "-"}</TableCell>
+                                <TableCell className="text-white py-4">{account.franchise || "-"}</TableCell>
                                 <TableCell className="text-white py-4">{account.first_name}</TableCell>
                                 <TableCell className="text-white py-4">{account.middle_name || "-"}</TableCell>
                                 <TableCell className="text-white py-4">{account.last_name}</TableCell>
-                                <TableCell className="text-white py-4">{account.email}</TableCell>
+                                <TableCell className="text-white py-4">{account.email || "-"}</TableCell>
                                 <TableCell className="text-white py-4">
                                     {[account.address, account.city, account.province, account.zip_code]
                                         .filter(Boolean)
                                         .join(", ") || "-"}
                                 </TableCell>
-                                <TableCell className="text-white py-4">{account.contact_number || "-"}</TableCell>
+                                <TableCell className="text-white py-4">{account.contact_number_1 || "-"}</TableCell>
                                 <TableCell className="text-white py-4">{account.contact_number_2 || "-"}</TableCell>
                             </TableRow>
                         ))

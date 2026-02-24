@@ -1,12 +1,12 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient2 as createClient } from "@/lib/supabase/server";
 
 export async function getUnits() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("units")
-    .select("*, franchise(*), accounts(*)")
+    .select("*, franchise(*), user_account(*)")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -30,7 +30,7 @@ export async function getUnitsWithCounts() {
   }
 
   const { data: accountsWithFunders, error: accountsError } = await supabase
-    .from("accounts")
+    .from("user_account")
     .select(
       `
             unit_id, 

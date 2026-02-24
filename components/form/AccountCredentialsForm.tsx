@@ -11,13 +11,10 @@ import { Save, Loader2, Eye, EyeOff } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { createCredential, updateCredential } from "@/helper/credentials"
-import { getFranchises } from "@/helper/franchise"
-import { Franchise } from "@/types/franchise"
 import { BETTING_SITES } from "@/data/bettingSites"
 
 const credentialSchema = z.object({
     name: z.string().min(1, "Account Name is required"),
-    franchise_id: z.string().min(1, "Franchise Name is required"),
     betting_site: z.string().min(1, "Betting Site is required"),
     username: z.string().min(1, "Username is required"),
     password: z.string().min(1, "Password is required"),
@@ -39,13 +36,10 @@ export const AccountCredentialsForm = ({
 }: AccountCredentialsFormProps) => {
     const router = useRouter()
     const [isPending, setIsPending] = React.useState(false)
-    const [franchises, setFranchises] = useState<Franchise[]>([])
     const [showPassword, setShowPassword] = useState(false)
     const isUpdate = !!initialData
 
-    useEffect(() => {
-        getFranchises().then(setFranchises).catch(() => setFranchises([]))
-    }, [])
+
 
     const {
         register,
@@ -55,7 +49,6 @@ export const AccountCredentialsForm = ({
         resolver: zodResolver(credentialSchema),
         defaultValues: {
             name: initialData?.name || "",
-            franchise_id: initialData?.franchise_id || "",
             betting_site: initialData?.betting_site || "",
             username: initialData?.username || "",
             password: initialData?.password || "",
@@ -126,23 +119,7 @@ export const AccountCredentialsForm = ({
                 {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
             </div>
 
-            {/* FRANCHISE */}
-            <div className="space-y-2">
-                <Label htmlFor="franchise_id" className="text-white text-sm font-medium">FRANCHISE</Label>
-                <select
-                    id="franchise_id"
-                    {...register("franchise_id")}
-                    className={selectClassName}
-                >
-                    <option value="" disabled className="text-gray-500 bg-[#0d0d0d]">Select a franchise</option>
-                    {franchises.map((f) => (
-                        <option key={f.id} value={f.id} className="bg-[#0d0d0d]">
-                            {f.name}{f.code ? ` (${f.code})` : ""}
-                        </option>
-                    ))}
-                </select>
-                {errors.franchise_id && <p className="text-xs text-red-500 mt-1">{errors.franchise_id.message}</p>}
-            </div>
+
 
             {/* BETTING SITE */}
             <div className="space-y-2">

@@ -90,7 +90,6 @@ export const CredentialsTable = ({ data, funders = [] }: CredentialsTableProps) 
                 <TableHeader className="bg-[#0a0a0a]">
                     <TableRow className="border-gray-800 hover:bg-transparent">
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">ACCOUNT NAME</TableHead>
-                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">FRANCHISE</TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">USERNAME</TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">PASSWORD</TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">ACTIONS</TableHead>
@@ -108,9 +107,6 @@ export const CredentialsTable = ({ data, funders = [] }: CredentialsTableProps) 
                             <TableRow key={credential.id} className="border-gray-800 hover:bg-[#1a1a1a]/50 transition-colors">
                                 <TableCell className="text-center text-gray-200 text-xs py-3">
                                     {credential.name || "-"}
-                                </TableCell>
-                                <TableCell className="text-center text-gray-200 text-xs py-3 whitespace-nowrap">
-                                    {credential.franchise?.name || "-"}
                                 </TableCell>
                                 <TableCell className="text-center text-gray-200 text-xs py-3">{credential.username || "-"}</TableCell>
                                 <TableCell className="text-center text-gray-200 text-xs py-3 font-mono">
@@ -169,7 +165,6 @@ export const CredentialsTableSkeleton = () => {
                 <TableHeader className="bg-[#0a0a0a]">
                     <TableRow className="border-gray-800 hover:bg-transparent">
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">ACCOUNT NAME</TableHead>
-                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">FRANCHISE NAME</TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">USERNAME</TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">PASSWORD</TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">ACTIONS</TableHead>
@@ -181,11 +176,6 @@ export const CredentialsTableSkeleton = () => {
                             <TableCell className="py-3">
                                 <div className="flex justify-center">
                                     <Skeleton className="h-4 w-[150px] bg-[#1a1a1a]" />
-                                </div>
-                            </TableCell>
-                            <TableCell className="py-3">
-                                <div className="flex justify-center">
-                                    <Skeleton className="h-4 w-[100px] bg-[#1a1a1a]" />
                                 </div>
                             </TableCell>
                             <TableCell className="py-3">

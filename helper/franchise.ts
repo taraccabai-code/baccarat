@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient2 as createClient } from "@/lib/supabase/server";
 
 export async function getFranchises() {
   const supabase = await createClient();

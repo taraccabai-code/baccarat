@@ -19,14 +19,14 @@ const userAccountSchema = z.object({
     birth_year: z.string().optional(),
     birth_month: z.string().optional(),
     birth_day: z.string().optional(),
-    email: z.string().email("Invalid email address"),
-    contact_number: z.string().min(1, "Contact number 1 is required"),
+    email: z.string().email("Invalid email address").optional().or(z.literal("")),
+    contact_number_1: z.string().min(1, "Contact number 1 is required"),
     contact_number_2: z.string().optional(),
     address: z.string().min(1, "Address is required"),
     city: z.string().optional(),
     province: z.string().optional(),
     zip_code: z.string().optional(),
-    franchise_id: z.string().optional(),
+    franchise: z.string().optional(),
 })
 
 type UserAccountFormValues = z.infer<typeof userAccountSchema>
@@ -60,13 +60,13 @@ export const UserAccountsForm = ({ initialData, units = [], franchises = [], set
             birth_month: initialData?.birth_month || "",
             birth_day: initialData?.birth_day || "",
             email: initialData?.email || "",
-            contact_number: initialData?.contact_number || "",
+            contact_number_1: initialData?.contact_number_1 || "",
             contact_number_2: initialData?.contact_number_2 || "",
             address: initialData?.address || "",
             city: initialData?.city || "",
             province: initialData?.province || "",
             zip_code: initialData?.zip_code || "",
-            franchise_id: initialData?.franchise_id || "",
+            franchise: initialData?.franchise || "",
         },
     })
 
@@ -76,7 +76,7 @@ export const UserAccountsForm = ({ initialData, units = [], franchises = [], set
 
         try {
             // Convert empty strings to null for numeric fields to avoid Postgres errors
-            const numericFields = ["birth_year", "birth_month", "birth_day", "contact_number", "contact_number_2", "zip_code"] as const;
+            const numericFields = ["birth_year", "birth_month", "birth_day", "contact_number_1", "contact_number_2", "zip_code"] as const;
             const sanitizedData = { ...data } as any;
 
             numericFields.forEach(field => {
@@ -205,11 +205,13 @@ export const UserAccountsForm = ({ initialData, units = [], franchises = [], set
                     </div>
                 </div>
 
+
+
                 {/* EMAIL ADDRESS */}
                 <div className="space-y-2">
-                    <Label htmlFor="email_address" className="text-white">EMAIL ADDRESS</Label>
+                    <Label htmlFor="email" className="text-white">EMAIL ADDRESS</Label>
                     <Input
-                        id="email_address"
+                        id="email"
                         type="email"
                         {...register("email")}
                         className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
@@ -225,11 +227,11 @@ export const UserAccountsForm = ({ initialData, units = [], franchises = [], set
                         <Label htmlFor="contact_number_1" className="text-white">CONTACT NUMBER 1</Label>
                         <Input
                             id="contact_number_1"
-                            {...register("contact_number")}
+                            {...register("contact_number_1")}
                             className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
                             placeholder="Enter contact number 1"
                         />
-                        {errors.contact_number && <p className="text-xs text-red-500">{errors.contact_number.message}</p>}
+                        {errors.contact_number_1 && <p className="text-xs text-red-500">{errors.contact_number_1.message}</p>}
                     </div>
 
                     {/* CONTACT NUMBER 2 */}
@@ -289,11 +291,11 @@ export const UserAccountsForm = ({ initialData, units = [], franchises = [], set
 
                 {/* FRANCHISE */}
                 <div className="space-y-2">
-                    <Label htmlFor="franchise_id" className="text-white">FRANCHISE</Label>
+                    <Label htmlFor="franchise" className="text-white">FRANCHISE</Label>
                     <div className="relative">
                         <select
-                            id="franchise_id"
-                            {...register("franchise_id")}
+                            id="franchise"
+                            {...register("franchise")}
                             className="flex h-10 w-full rounded-md border border-gray-700 bg-gray-800 text-white px-3 py-1 text-sm appearance-none focus:border-blue-500 transition-colors shadow-inner"
                         >
                             <option value="">-- Select Franchise --</option>
@@ -301,7 +303,7 @@ export const UserAccountsForm = ({ initialData, units = [], franchises = [], set
                                 .map((franchise) => (
                                     <option
                                         key={franchise.id}
-                                        value={franchise.id}
+                                        value={franchise.name}
                                         className="text-white"
                                     >
                                         {franchise.name}
@@ -310,7 +312,7 @@ export const UserAccountsForm = ({ initialData, units = [], franchises = [], set
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                     </div>
-                    {errors.franchise_id && <p className="text-xs text-red-500">{errors.franchise_id.message}</p>}
+                    {errors.franchise && <p className="text-xs text-red-500">{errors.franchise.message}</p>}
                 </div>
 
                 <div className="flex justify-end gap-3 pt-6 border-t border-gray-800">

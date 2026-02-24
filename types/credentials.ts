@@ -4,10 +4,6 @@ export interface Credential {
     password: string | null;
     username: string | null;
     name: string | null;
-    franchise_id?: string | null;
-    franchise?: {
-        name: string;
-    } | null;
 }
 
 export type CreateCredential = Omit<Credential, "id" | "created_at">;

@@ -42,7 +42,7 @@ const UserAccountsPage = () => {
             (account.first_name?.toLowerCase() || "").includes(query) ||
             (account.last_name?.toLowerCase() || "").includes(query) ||
             (account.email?.toLowerCase() || "").includes(query) ||
-            (account.server_unit?.toLowerCase() || "").includes(query)
+            (account.franchise?.toLowerCase() || "").includes(query)
         )
     })
 
