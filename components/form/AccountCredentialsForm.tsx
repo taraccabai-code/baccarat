@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { createCredential, updateCredential } from "@/helper/credentials"
 import { getPlatformWebsites, PlatformWebsiteRecord } from "@/helper/platform_websites"
+import { getAccounts } from "@/helper/accounts"
 
 const credentialSchema = z.object({
     name: z.string().min(1, "Account Name is required"),
@@ -37,11 +38,13 @@ export const AccountCredentialsForm = ({
     const router = useRouter()
     const [isPending, setIsPending] = React.useState(false)
     const [platforms, setPlatforms] = useState<PlatformWebsiteRecord[]>([])
+    const [accounts, setAccounts] = useState<any[]>([])
     const [showPassword, setShowPassword] = useState(false)
     const isUpdate = !!initialData
 
     useEffect(() => {
         getPlatformWebsites().then(setPlatforms).catch(() => setPlatforms([]))
+        getAccounts().then(setAccounts).catch(() => setAccounts([]))
     }, [])
 
     const {
@@ -113,12 +116,23 @@ export const AccountCredentialsForm = ({
             {/* ACCOUNT NAME */}
             <div className="space-y-2">
                 <Label htmlFor="name" className="text-white text-sm font-medium">ACCOUNT NAME</Label>
-                <Input
+                <select
                     id="name"
                     {...register("name")}
-                    className="bg-[#0d0d0d] border-[#1a1a1a] text-white placeholder:text-gray-500 h-11 focus:border-blue-500 transition-all shadow-inner"
-                    placeholder="Enter account profile name"
-                />
+                    className={selectClassName}
+                >
+                    <option value="" disabled className="text-gray-500 bg-[#0d0d0d]">Select an account name</option>
+                    {accounts.map((acc) => {
+                        const fullName = [acc.first_name, acc.middle_name, acc.last_name]
+                            .filter(Boolean)
+                            .join(" ");
+                        return (
+                            <option key={acc.id} value={fullName} className="bg-[#0d0d0d]">
+                                {fullName}
+                            </option>
+                        );
+                    })}
+                </select>
                 {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
             </div>
 
