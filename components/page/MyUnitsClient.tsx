@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { getUnitsWithCounts, updateUnitStatus, archiveUnit, checkUnitHealth } from '@/helper/units'
 import { UnitsSearch } from '@/components/search/UnitsSearch'
 import { Button } from '@/components/ui/button'
-import { Plus, RefreshCw } from 'lucide-react'
+import { Plus, RefreshCw, Filter, ChevronDown, Check } from 'lucide-react'
 import UnitsList from '@/components/list/UnitsList'
 import { UnitModal } from '@/components/modal/Update/UnitModal'
 import { Unit } from "@/types/units"
@@ -14,7 +14,6 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { getFranchises } from '@/helper/franchise'
 import { Franchise } from '@/types/franchise'
-import { Filter, ChevronDown, Check } from 'lucide-react'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -168,16 +167,18 @@ export default function MyUnitsClient({ initialUnits }: MyUnitsClientProps) {
         }
     }
 
-    const filteredUnits = units.filter((unit: any) => {
-        const query = searchQuery.toLowerCase();
-        const matchesSearch = (
-            unit.unit_name?.toLowerCase().includes(query) ||
-            unit.franchise?.name?.toLowerCase().includes(query) ||
-            unit.franchise?.code?.toLowerCase().includes(query)
-        );
-        const matchesFranchise = !selectedFranchiseId || unit.franchise_id === selectedFranchiseId;
-        return !unit.archived && matchesSearch && matchesFranchise;
-    });
+    const filteredUnits = React.useMemo(() => {
+        return units.filter((unit: any) => {
+            const query = searchQuery.toLowerCase();
+            const matchesSearch = (
+                unit.unit_name?.toLowerCase().includes(query) ||
+                unit.franchise?.name?.toLowerCase().includes(query) ||
+                unit.franchise?.code?.toLowerCase().includes(query)
+            );
+            const matchesFranchise = !selectedFranchiseId || unit.franchise_id === selectedFranchiseId;
+            return !unit.archived && matchesSearch && matchesFranchise;
+        });
+    }, [units, searchQuery, selectedFranchiseId]);
 
     return (
         <div className="flex flex-col h-full bg-[#050505] min-h-screen">
@@ -213,8 +214,8 @@ export default function MyUnitsClient({ initialUnits }: MyUnitsClientProps) {
                                 >
                                     <Filter className="h-4 w-4" />
                                     <span className="hidden sm:inline">
-                                        {selectedFranchiseId 
-                                            ? franchises.find(f => f.id === selectedFranchiseId)?.name 
+                                        {selectedFranchiseId
+                                            ? franchises.find(f => f.id === selectedFranchiseId)?.name
                                             : "Franchises"}
                                     </span>
                                     <ChevronDown className="h-4 w-4 opacity-50" />
@@ -225,7 +226,7 @@ export default function MyUnitsClient({ initialUnits }: MyUnitsClientProps) {
                                     Filter by Franchise
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator className="bg-gray-800" />
-                                <DropdownMenuItem 
+                                <DropdownMenuItem
                                     onClick={() => setSelectedFranchiseId(null)}
                                     className="gap-2 focus:bg-gray-900 focus:text-white cursor-pointer"
                                 >
@@ -235,7 +236,7 @@ export default function MyUnitsClient({ initialUnits }: MyUnitsClientProps) {
                                     All Units
                                 </DropdownMenuItem>
                                 {franchises.map((f) => (
-                                    <DropdownMenuItem 
+                                    <DropdownMenuItem
                                         key={f.id}
                                         onClick={() => setSelectedFranchiseId(f.id === selectedFranchiseId ? null : f.id)}
                                         className="gap-2 focus:bg-gray-900 focus:text-white cursor-pointer"

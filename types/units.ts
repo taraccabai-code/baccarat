@@ -13,6 +13,11 @@ export interface Unit {
     is_occupied: boolean;
     platform: string | null;
     credential_id: string | null;
+    balance?: number | string | null;
+    level?: number | null;
+    pattern?: string | null;
+    strategy?: string | null;
+    duration?: number | string | null;
 }
 
 export type CreateUnit = Omit<

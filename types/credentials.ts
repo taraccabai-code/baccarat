@@ -4,6 +4,7 @@ export interface Credential {
     password: string | null;
     username: string | null;
     name: string | null;
+    platform_website: string | null;
     franchise_id?: string | null;
     franchise?: {
         name: string;
