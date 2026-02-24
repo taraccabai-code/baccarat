@@ -11,11 +11,11 @@ import { Save, Loader2, Eye, EyeOff } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { createCredential, updateCredential } from "@/helper/credentials"
-import { BETTING_SITES } from "@/data/bettingSites"
+import { getPlatformWebsites, PlatformWebsiteRecord } from "@/helper/platform_websites"
 
 const credentialSchema = z.object({
     name: z.string().min(1, "Account Name is required"),
-    betting_site: z.string().min(1, "Betting Site is required"),
+    platform_website: z.string().min(1, "Betting Site is required"),
     username: z.string().min(1, "Username is required"),
     password: z.string().min(1, "Password is required"),
 })
@@ -36,10 +36,13 @@ export const AccountCredentialsForm = ({
 }: AccountCredentialsFormProps) => {
     const router = useRouter()
     const [isPending, setIsPending] = React.useState(false)
+    const [platforms, setPlatforms] = useState<PlatformWebsiteRecord[]>([])
     const [showPassword, setShowPassword] = useState(false)
     const isUpdate = !!initialData
 
-
+    useEffect(() => {
+        getPlatformWebsites().then(setPlatforms).catch(() => setPlatforms([]))
+    }, [])
 
     const {
         register,
@@ -49,7 +52,7 @@ export const AccountCredentialsForm = ({
         resolver: zodResolver(credentialSchema),
         defaultValues: {
             name: initialData?.name || "",
-            betting_site: initialData?.betting_site || "",
+            platform_website: initialData?.platform_website || "",
             username: initialData?.username || "",
             password: initialData?.password || "",
         },
@@ -123,20 +126,20 @@ export const AccountCredentialsForm = ({
 
             {/* BETTING SITE */}
             <div className="space-y-2">
-                <Label htmlFor="betting_site" className="text-white text-sm font-medium uppercase">BETTING PLATFORM</Label>
+                <Label htmlFor="platform_website" className="text-white text-sm font-medium uppercase">BETTING PLATFORM</Label>
                 <select
-                    id="betting_site"
-                    {...register("betting_site")}
+                    id="platform_website"
+                    {...register("platform_website")}
                     className={selectClassName}
                 >
                     <option value="" disabled className="text-gray-500 bg-[#0d0d0d]">Select a betting platform</option>
-                    {BETTING_SITES.map((site) => (
-                        <option key={site.value} value={site.value} className="bg-[#0d0d0d]">
-                            {site.label}
+                    {platforms.map((p) => (
+                        <option key={p.id} value={String(p.platform_name)} className="bg-[#0d0d0d]">
+                            {p.platform_name}
                         </option>
                     ))}
                 </select>
-                {errors.betting_site && <p className="text-xs text-red-500 mt-1">{errors.betting_site.message}</p>}
+                {errors.platform_website && <p className="text-xs text-red-500 mt-1">{errors.platform_website.message}</p>}
             </div>
 
             {/* USERNAME */}

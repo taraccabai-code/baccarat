@@ -4,6 +4,7 @@ export interface Credential {
     password: string | null;
     username: string | null;
     name: string | null;
+    platform_website: string | null;
 }
 
 export type CreateCredential = Omit<Credential, "id" | "created_at">;

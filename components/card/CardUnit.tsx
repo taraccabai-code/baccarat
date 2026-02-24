@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
     Pencil,
     Archive,
@@ -8,7 +9,13 @@ import {
     WifiLow,
     Unplug,
     MonitorOff,
-    CircleOff
+    CircleOff,
+    Eye,
+    EyeOff,
+    User,
+    DollarSign,
+    Zap,
+    TrendingUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -34,6 +41,13 @@ export interface UnitCardProps {
     badgeBg: string;        // purple-600
     badgeText: string;      // purple-100
     tags?: UnitTag[];
+    credentialName?: string;
+    credentialUsername?: string;
+    credentialPassword?: string;
+    balance?: number | string;
+    level?: number;
+    pattern?: string;
+    strategy?: string;
     onStatusChange?: (id: string, status: UnitStatus) => void;
     onArchive?: (id: string, name: string) => void;
     onEdit?: (id: string) => void;
@@ -51,10 +65,18 @@ export function UnitCard({
     badgeBg,
     badgeText,
     tags = [],
+    credentialName,
+    credentialUsername,
+    credentialPassword,
+    balance,
+    level,
+    pattern,
+    strategy,
     onStatusChange,
     onArchive,
     onEdit
 }: UnitCardProps) {
+    const [showPassword, setShowPassword] = useState(false);
     const getStatusConfig = (status: UnitStatus) => {
         switch (status) {
             case "enabled":
@@ -102,11 +124,17 @@ export function UnitCard({
 
 
 
-                {/* Code */}
+                {/* Code & Balance */}
                 <div className="text-center mb-2">
-                    <div className="font-bold text-2xl font-mono text-white">
+                    <div className="font-bold text-2xl font-mono text-white flex items-center justify-center gap-2">
                         {code}
                     </div>
+                    {balance !== undefined && (
+                        <div className="flex items-center justify-center gap-1 text-green-400 font-mono font-bold text-lg mt-1">
+                            <DollarSign className="h-4 w-4" />
+                            {typeof balance === 'number' ? balance.toLocaleString() : balance}
+                        </div>
+                    )}
                     <div className="min-h-[16px]">
                         {company && (
                             <div className="text-xs mt-1 text-gray-400">{company}</div>
@@ -126,28 +154,60 @@ export function UnitCard({
 
                 <div className="border-t border-gray-700 mb-4" />
 
-                {/* Tags */}
-                <div className="mb-4 min-h-[80px] flex flex-col justify-start">
-                    <div className="space-y-3">
-                        {tags.map((tag, i) => (
-                            <div
-                                key={i}
-                                className="flex items-center gap-2 w-full justify-center"
-                            >
-                                <span
-                                    className="font-bold px-2 py-1 rounded text-xs inline-flex items-center justify-center min-w-[60px]"
-                                    style={{
-                                        backgroundColor: tag.bgColor,
-                                        color: tag.textColor ?? "white",
-                                    }}
-                                >
-                                    {tag.label}
-                                </span>
-                                <span className="text-sm text-white">{tag.count}</span>
+                {/* User & Password */}
+                <div className="mb-4 min-h-[80px] flex flex-col justify-center gap-2">
+                    {credentialName ? (
+                        <>
+                            <div className="flex items-center gap-2 text-sm text-gray-300">
+                                <User className="h-3.5 w-3.5 text-gray-500 shrink-0" />
+                                <span className="truncate font-medium">{credentialName}</span>
                             </div>
-                        ))}
-                    </div>
+                            <div className="flex items-center gap-2 text-sm">
+                                <span className="font-mono tracking-widest text-gray-400 text-xs flex-1 truncate">
+                                    {showPassword
+                                        ? (credentialPassword || "—")
+                                        : "••••••••"}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(p => !p)}
+                                    className="text-gray-500 hover:text-white transition-colors shrink-0"
+                                    title={showPassword ? "Hide password" : "Show password"}
+                                >
+                                    {showPassword
+                                        ? <EyeOff className="h-3.5 w-3.5" />
+                                        : <Eye className="h-3.5 w-3.5" />}
+                                </button>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="text-xs text-gray-600 text-center">No user assigned</div>
+                    )}
                 </div>
+
+                {/* Live Stats Section */}
+                {(level !== undefined || pattern || strategy) && (
+                    <div className="grid grid-cols-2 gap-2 mb-4 p-2 rounded bg-gray-900/50 border border-gray-700/50">
+                        {level !== undefined && (
+                            <div className="flex flex-col">
+                                <span className="text-[10px] text-gray-500 uppercase font-bold">Level</span>
+                                <span className="text-sm font-mono text-blue-400">{level}</span>
+                            </div>
+                        )}
+                        {strategy && (
+                            <div className="flex flex-col">
+                                <span className="text-[10px] text-gray-500 uppercase font-bold">Strategy</span>
+                                <span className="text-sm truncate text-gray-300" title={strategy}>{strategy}</span>
+                            </div>
+                        )}
+                        {pattern && (
+                            <div className="flex flex-col col-span-2 border-t border-gray-800 pt-1 mt-1">
+                                <span className="text-[10px] text-gray-500 uppercase font-bold">Pattern</span>
+                                <span className="text-sm font-mono text-amber-500 truncate" title={pattern}>{pattern}</span>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 <div className="border-t border-gray-700 mb-4" />
 

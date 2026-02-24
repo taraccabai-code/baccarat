@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient2 as createClient } from "@/lib/supabase/server";
+import { createClient2 as createClient, createClient2 } from "@/lib/supabase/server";
 
 export async function getUnits() {
   const supabase = await createClient();
@@ -50,11 +50,34 @@ export async function getUnitsWithCounts() {
 
   if (accountsError) {
     console.error("Error fetching accounts for counts:", accountsError);
-    return units.map((unit) => ({ ...unit, funder_counts: [] }));
+    // Continue even if accounts fetch fails
   }
 
-  return units.map((unit) => {
-    const relatedAccounts = accountsWithFunders.filter(
+  // Fetch all credentials for merging
+  const { data: allCredentials, error: credError } = await supabase
+    .from("credentials")
+    .select("id, name, username, password");
+
+  if (credError) {
+    console.error("Error fetching credentials for units:", credError);
+  }
+
+  // Fetch live stats from bot_monitoring (secondary project)
+  const supabase2 = await createClient2();
+  const { data: botMonitoring, error: botError } = await supabase2
+    .from("bot_monitoring")
+    .select("pc_name, status, balance, level, pattern, strategy, duration");
+
+  if (botError) {
+    console.error("Error fetching bot monitoring data:", botError);
+  }
+
+  const safeUnits = units || [];
+  const safeAccounts = accountsWithFunders || [];
+  const safeCredentials = allCredentials || [];
+
+  return safeUnits.map((unit) => {
+    const relatedAccounts = safeAccounts.filter(
       (acc) => acc.unit_id === unit.id,
     );
 
@@ -66,8 +89,6 @@ export async function getUnitsWithCounts() {
 
     relatedAccounts.forEach((acc) => {
       (acc.funder_accounts || []).forEach((fa: any) => {
-        // Only count "active" status funder accounts if desired,
-        // but usually the count is for total accounts assigned to this unit
         if (
           fa.status === "idle" ||
           fa.status === "trading" ||
@@ -95,9 +116,26 @@ export async function getUnitsWithCounts() {
       text_color: data.text_color,
     }));
 
+    // Find matching bot monitoring record
+    // Match by unit_name (primary) vs pc_name (secondary)
+    const liveStats = botMonitoring?.find(
+      (bm) => bm.pc_name?.toLowerCase() === unit.unit_name?.toLowerCase(),
+    );
+
+    // Find matching credential
+    const credential = safeCredentials.find(c => c.id === unit.credential_id);
+
     return {
       ...unit,
       funder_counts,
+      credentials: credential || null,
+      // Merge live stats from bot_monitoring if available
+      status: liveStats?.status || unit.status,
+      balance: liveStats?.balance,
+      level: liveStats?.level,
+      pattern: liveStats?.pattern,
+      strategy: liveStats?.strategy,
+      duration: liveStats?.duration,
     };
   });
 }

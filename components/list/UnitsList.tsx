@@ -9,6 +9,16 @@ interface UnitWithCounts extends Unit {
         allias_color: string;
         text_color: string;
     }[];
+    credentials?: {
+        id: string;
+        name: string | null;
+        username: string | null;
+        password: string | null;
+    } | null;
+    balance?: number | string | null;
+    level?: number | null;
+    pattern?: string | null;
+    strategy?: string | null;
 }
 
 interface UnitsListProps {
@@ -56,7 +66,7 @@ const UnitsList = ({ units, onEdit, onArchive, onStatusChange }: UnitsListProps)
                     shortName={unit.franchise?.code || "UN"}
                     company={unit.franchise?.name || undefined}
                     status={unit.status || "disabled"}
-                    serial={unit.unit_id.split("-")[0].toUpperCase()} // Using part of UUID as serial for display
+                    serial={unit.unit_id.split("-")[0].toUpperCase()}
                     owner={unit.franchise?.name || "Unknown"}
                     accentColor={(unit.franchise as any)?.color || "border-gray-600"}
                     badgeBg={(unit.franchise as any)?.color?.replace('border', 'bg').replace('500', '600') || "bg-gray-600"}
@@ -67,6 +77,13 @@ const UnitsList = ({ units, onEdit, onArchive, onStatusChange }: UnitsListProps)
                         bgColor: fc.allias_color,
                         textColor: fc.text_color
                     }))}
+                    credentialName={unit.credentials?.name ?? undefined}
+                    credentialUsername={unit.credentials?.username ?? undefined}
+                    credentialPassword={unit.credentials?.password ?? undefined}
+                    balance={unit.balance ?? undefined}
+                    level={unit.level ?? undefined}
+                    pattern={unit.pattern ?? undefined}
+                    strategy={unit.strategy ?? undefined}
                     onEdit={() => onEdit?.(unit)}
                     onArchive={onArchive}
                     onStatusChange={onStatusChange}

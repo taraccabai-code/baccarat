@@ -10,9 +10,10 @@ import { Credential } from "@/types/credentials"
 import { getFranchises } from "@/helper/franchise"
 import { createUnit, updateUnit, getUnits, updateUnitConfig } from "@/helper/units"
 import { getCredentials } from "@/helper/credentials"
+import { getPlatformWebsites, PlatformWebsiteRecord } from "@/helper/platform_websites"
+import { SearchableSelect } from "@/components/ui/searchable-select"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
-import { BETTING_SITES } from "@/data/bettingSites"
 
 interface UnitFormProps {
     initialData?: Unit | null
@@ -29,6 +30,7 @@ export function UnitForm({ initialData, onSuccess, franchises: initialFranchises
     const [franchises, setFranchises] = useState<Franchise[]>(initialFranchises || [])
     const [units, setUnits] = useState<Unit[]>(initialUnits || [])
     const [credentials, setCredentials] = useState<Credential[]>([])
+    const [platforms, setPlatforms] = useState<PlatformWebsiteRecord[]>([])
 
     const [formData, setFormData] = useState({
         unit_name: initialData?.unit_name || "",
@@ -41,17 +43,26 @@ export function UnitForm({ initialData, onSuccess, franchises: initialFranchises
 
     useEffect(() => {
         const fetchData = async () => {
-            const [franchiseData, unitData, credentialData] = await Promise.all([
+            const [franchiseData, unitData, credentialData, platformData] = await Promise.all([
                 !initialFranchises ? getFranchises() : Promise.resolve(initialFranchises),
                 !initialUnits ? getUnits() : Promise.resolve(initialUnits),
-                getCredentials()
+                getCredentials(),
+                getPlatformWebsites()
             ])
             if (!initialFranchises) setFranchises(franchiseData)
             if (!initialUnits) setUnits(unitData)
             setCredentials(credentialData as Credential[])
+            setPlatforms(platformData)
         }
         fetchData()
     }, [initialFranchises, initialUnits])
+
+    // Automatically select the first franchise if none is selected and we're not editing
+    useEffect(() => {
+        if (!isEditing && !formData.franchise_id && franchises.length > 0) {
+            setFormData(prev => ({ ...prev, franchise_id: franchises[0].id }))
+        }
+    }, [franchises, isEditing, formData.franchise_id])
 
     const selectedFranchise = franchises.find(f => f.id === formData.franchise_id)
     const franchiseUnits = units.filter(u => u.franchise_id === formData.franchise_id)
@@ -125,57 +136,43 @@ export function UnitForm({ initialData, onSuccess, franchises: initialFranchises
                     )}
                 </div>
 
-                <div className="space-y-2">
-                    <Label htmlFor="franchise_id">Franchise</Label>
-                    <select
-                        id="franchise_id"
-                        value={formData.franchise_id || ""}
-                        onChange={(e) => setFormData({ ...formData, franchise_id: e.target.value })}
-                        required
-                        className="flex h-10 w-full rounded-md border border-[#1a1a1a] bg-[#050505] px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 focus:border-blue-500/50"
-                    >
-                        <option value="" disabled>Select a franchise</option>
-                        {franchises.map((f) => (
-                            <option key={f.id} value={f.id}>
-                                {f.name} ({f.code})
-                            </option>
-                        ))}
-                    </select>
-                </div>
+                {/* Hidden Franchise Field - Defaulting to first if not editing */}
+                {/* {!isEditing && (
+                    <div className="space-y-2">
+                        <Label htmlFor="franchise_id">Franchise</Label>
+                        <SearchableSelect
+                            id="franchise_id"
+                            required
+                            value={formData.franchise_id || ""}
+                            onChange={(val) => setFormData({ ...formData, franchise_id: val })}
+                            placeholder="Select a franchise"
+                            options={franchises.map(f => ({ value: f.id, label: `${f.name} (${f.code})` }))}
+                        />
+                    </div>
+                )} */}
 
                 <div className="space-y-2">
                     <Label htmlFor="credential_id">User</Label>
-                    <select
+                    <SearchableSelect
                         id="credential_id"
                         value={formData.credential_id || ""}
-                        onChange={(e) => setFormData({ ...formData, credential_id: e.target.value })}
-                        className="flex h-10 w-full rounded-md border border-[#1a1a1a] bg-[#050505] px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 focus:border-blue-500/50"
-                    >
-                        <option value="">No user assigned</option>
-                        {credentials.map((c) => (
-                            <option key={c.id} value={c.id}>
-                                {c.name}
-                            </option>
-                        ))}
-                    </select>
+                        onChange={(val) => setFormData({ ...formData, credential_id: val })}
+                        placeholder="Select a user"
+                        emptyLabel="No user assigned"
+                        options={credentials.map(c => ({ value: c.id, label: c.name ?? c.id }))}
+                    />
                 </div>
 
                 <div className="space-y-2">
                     <Label htmlFor="platform">Platform</Label>
-                    <select
+                    <SearchableSelect
                         id="platform"
-                        value={formData.platform || ""}
-                        onChange={(e) => setFormData({ ...formData, platform: e.target.value })}
                         required
-                        className="flex h-10 w-full rounded-md border border-[#1a1a1a] bg-[#050505] px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 focus:border-blue-500/50"
-                    >
-                        <option value="" disabled>Select a platform</option>
-                        {BETTING_SITES.map((site) => (
-                            <option key={site.value} value={site.value}>
-                                {site.label}
-                            </option>
-                        ))}
-                    </select>
+                        value={formData.platform || ""}
+                        onChange={(val) => setFormData({ ...formData, platform: val })}
+                        placeholder="Select a platform"
+                        options={platforms.map(p => ({ value: String(p.platform_name), label: String(p.platform_name) }))}
+                    />
                 </div>
 
             </div>
