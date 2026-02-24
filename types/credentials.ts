@@ -1,10 +1,10 @@
 export interface Credential {
-    id: string;
+    id: number;
     created_at: string;
     password: string | null;
     username: string | null;
-    name: string | null;
-    platform_website: string | null;
+    account_name: string | null;
+    betting_platform: string | null;
 }
 
 export type CreateCredential = Omit<Credential, "id" | "created_at">;

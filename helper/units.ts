@@ -123,7 +123,7 @@ export async function getUnitsWithCounts() {
     );
 
     // Find matching credential
-    const credential = safeCredentials.find(c => c.id === unit.credential_id);
+    const credential = safeCredentials.find(c => Number(c.id) === Number(unit.credential_id));
 
     return {
       ...unit,

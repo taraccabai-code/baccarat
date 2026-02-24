@@ -15,8 +15,8 @@ import { getPlatformWebsites, PlatformWebsiteRecord } from "@/helper/platform_we
 import { getAccounts } from "@/helper/accounts"
 
 const credentialSchema = z.object({
-    name: z.string().min(1, "Account Name is required"),
-    platform_website: z.string().min(1, "Betting Site is required"),
+    account_name: z.string().min(1, "Account Name is required"),
+    betting_platform: z.string().min(1, "Betting Site is required"),
     username: z.string().min(1, "Username is required"),
     password: z.string().min(1, "Password is required"),
 })
@@ -43,8 +43,19 @@ export const AccountCredentialsForm = ({
     const isUpdate = !!initialData
 
     useEffect(() => {
-        getPlatformWebsites().then(setPlatforms).catch(() => setPlatforms([]))
-        getAccounts().then(setAccounts).catch(() => setAccounts([]))
+        const fetchData = async () => {
+            try {
+                const [platformData, accountsData] = await Promise.all([
+                    getPlatformWebsites(),
+                    getAccounts()
+                ])
+                setPlatforms(platformData)
+                setAccounts(accountsData)
+            } catch (error) {
+                console.error("Failed to fetch data:", error)
+            }
+        }
+        fetchData()
     }, [])
 
     const {
@@ -54,8 +65,8 @@ export const AccountCredentialsForm = ({
     } = useForm<CredentialFormValues>({
         resolver: zodResolver(credentialSchema),
         defaultValues: {
-            name: initialData?.name || "",
-            platform_website: initialData?.platform_website || "",
+            account_name: initialData?.account_name || "",
+            betting_platform: initialData?.betting_platform || "",
             username: initialData?.username || "",
             password: initialData?.password || "",
         },
@@ -115,13 +126,13 @@ export const AccountCredentialsForm = ({
 
             {/* ACCOUNT NAME */}
             <div className="space-y-2">
-                <Label htmlFor="name" className="text-white text-sm font-medium">ACCOUNT NAME</Label>
+                <Label htmlFor="account_name" className="text-white text-sm font-medium">ACCOUNT NAME</Label>
                 <select
-                    id="name"
-                    {...register("name")}
+                    id="account_name"
+                    {...register("account_name")}
                     className={selectClassName}
                 >
-                    <option value="" disabled className="text-gray-500 bg-[#0d0d0d]">Select an account name</option>
+                    <option value="" disabled className="text-gray-500 bg-[#0d0d0d]">Select a user account</option>
                     {accounts.map((acc) => {
                         const fullName = [acc.first_name, acc.middle_name, acc.last_name]
                             .filter(Boolean)
@@ -133,17 +144,17 @@ export const AccountCredentialsForm = ({
                         );
                     })}
                 </select>
-                {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
+                {errors.account_name && <p className="text-xs text-red-500 mt-1">{errors.account_name.message}</p>}
             </div>
 
 
 
             {/* BETTING SITE */}
             <div className="space-y-2">
-                <Label htmlFor="platform_website" className="text-white text-sm font-medium uppercase">BETTING PLATFORM</Label>
+                <Label htmlFor="betting_platform" className="text-white text-sm font-medium uppercase">BETTING PLATFORM</Label>
                 <select
-                    id="platform_website"
-                    {...register("platform_website")}
+                    id="betting_platform"
+                    {...register("betting_platform")}
                     className={selectClassName}
                 >
                     <option value="" disabled className="text-gray-500 bg-[#0d0d0d]">Select a betting platform</option>
@@ -153,7 +164,7 @@ export const AccountCredentialsForm = ({
                         </option>
                     ))}
                 </select>
-                {errors.platform_website && <p className="text-xs text-red-500 mt-1">{errors.platform_website.message}</p>}
+                {errors.betting_platform && <p className="text-xs text-red-500 mt-1">{errors.betting_platform.message}</p>}
             </div>
 
             {/* USERNAME */}

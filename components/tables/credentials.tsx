@@ -106,7 +106,7 @@ export const CredentialsTable = ({ data, funders = [] }: CredentialsTableProps) 
                         data.map((credential) => (
                             <TableRow key={credential.id} className="border-gray-800 hover:bg-[#1a1a1a]/50 transition-colors">
                                 <TableCell className="text-center text-gray-200 text-xs py-3">
-                                    {credential.name || "-"}
+                                    {credential.account_name || "-"}
                                 </TableCell>
                                 <TableCell className="text-center text-gray-200 text-xs py-3">{credential.username || "-"}</TableCell>
                                 <TableCell className="text-center text-gray-200 text-xs py-3 font-mono">
@@ -133,7 +133,7 @@ export const CredentialsTable = ({ data, funders = [] }: CredentialsTableProps) 
                                             funders={funders}
                                         />
                                         <button
-                                            onClick={() => handleDeleteClick(credential.id, credential.name || "this credential")}
+                                            onClick={() => handleDeleteClick(credential.id, credential.account_name || "this credential")}
                                             className="p-1.5 text-gray-400 hover:text-red-500 transition-colors bg-gray-800/50 rounded-md border border-gray-700 hover:border-red-500/50"
                                             title="Delete Credential"
                                         >
