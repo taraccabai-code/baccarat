@@ -83,9 +83,6 @@ const UnitsList = ({ units, onEdit, onArchive, onStatusChange }: UnitsListProps)
                     credentialUsername={unit.credentials?.username ?? undefined}
                     credentialPassword={unit.credentials?.password ?? undefined}
                     balance={unit.balance ?? undefined}
-                    level={unit.level ?? undefined}
-                    pattern={unit.pattern ?? undefined}
-                    strategy={unit.strategy ?? undefined}
                     onEdit={() => onEdit?.(unit)}
                     onArchive={onArchive}
                     onStatusChange={onStatusChange}
