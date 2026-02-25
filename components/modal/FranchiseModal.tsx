@@ -42,8 +42,8 @@ export const FranchiseModal = ({ isOpen, onClose }: FranchiseModalProps) => {
     const filteredFranchises = franchises.filter((f) => {
         const query = searchQuery.toLowerCase();
         return (
-            (f.name && f.name.toLowerCase().includes(query)) ||
-            (f.code && f.code.toLowerCase().includes(query)) ||
+            (f.franchise_name && f.franchise_name.toLowerCase().includes(query)) ||
+            (f.franchise_code && f.franchise_code.toLowerCase().includes(query)) ||
             (f.investor_name && f.investor_name.toLowerCase().includes(query))
         );
     });

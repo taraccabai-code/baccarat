@@ -4,12 +4,6 @@ import { useState } from "react";
 import {
     Pencil,
     Archive,
-    CircleCheck,
-    Loader2,
-    WifiLow,
-    Unplug,
-    MonitorOff,
-    CircleOff,
     Eye,
     EyeOff,
     User,
@@ -77,27 +71,29 @@ export function UnitCard({
     onEdit
 }: UnitCardProps) {
     const [showPassword, setShowPassword] = useState(false);
-    const getStatusConfig = (status: UnitStatus) => {
-        switch (status) {
-            case "enabled":
-                return { icon: CircleCheck, color: "text-green-500", label: "Enabled" };
-            case "processing":
-                return { icon: Loader2, color: "text-amber-500 animate-spin", label: "Processing" };
-            case "slow network":
-                return { icon: WifiLow, color: "text-orange-500", label: "Slow Network" };
-            case "not connected":
-                return { icon: Unplug, color: "text-red-500", label: "Not Connected" };
-            case "pc issue":
-                return { icon: MonitorOff, color: "text-red-500", label: "PC Issue" };
-            case "disabled":
-                return { icon: CircleOff, color: "text-gray-500", label: "Disabled" };
-            default:
-                return { icon: CircleOff, color: "text-gray-500", label: "Unknown" };
-        }
+    const getStatusConfig = (status: string) => {
+        // Normalize status to title case to match baccarat mapping keys
+        const normalizedStatus = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+        
+        const STATUS_COLORS: Record<string, string> = {
+            Running: "#4ADE80",
+            Burned: "#D32020",
+            Stopped: "#FF8000",
+            Idle: "#94A3B8",
+            Starting: "#cefc01ff",
+            Enabled: "#4ADE80",
+            Disabled: "#94A3B8",
+            "Slow network": "#FF8000",
+            "Not connected": "#D32020",
+            "Pc issue": "#D32020",
+            Processing: "#cefc01ff"
+        };
+
+        const color = STATUS_COLORS[normalizedStatus] || "#868686";
+        return { color, label: normalizedStatus };
     };
 
     const config = getStatusConfig(status);
-    const StatusIcon = config.icon;
 
     const statuses: UnitStatus[] = ["enabled", "processing", "slow network", "not connected", "pc issue", "disabled"];
     return (
@@ -214,8 +210,11 @@ export function UnitCard({
                 {/* Actions */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 px-2 py-1">
-                        <StatusIcon className={cn("w-4 h-4", config.color)} />
-                        <span className="text-xs font-medium text-gray-400 capitalize">{status}</span>
+                        <div 
+                            className="w-2 h-2 rounded-full shrink-0" 
+                            style={{ backgroundColor: config.color }}
+                        />
+                        <span className="text-xs font-medium text-gray-400">{config.label}</span>
                     </div>
 
                     <div className="flex items-center gap-2">

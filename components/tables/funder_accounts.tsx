@@ -59,75 +59,79 @@ export const FunderAccountsTable = ({
     };
 
     return (
-        <div className="w-full">
+        <div className="border rounded-md border-gray-800 overflow-hidden">
             <Table>
-                <TableHeader className="bg-[#0d0d0d] border-[#1a1a1a]">
-                    <TableRow className="border-[#1a1a1a] hover:bg-transparent">
-                        <TableHead className="w-1/10 text-muted-foreground font-medium text-sm pb-4 whitespace-nowrap">UNIT</TableHead>
-                        <TableHead className="w-1/10 text-muted-foreground font-medium text-sm pb-4 whitespace-nowrap">USER</TableHead>
-                        <TableHead className="w-1/10 text-muted-foreground font-medium text-sm pb-4 whitespace-nowrap">ACCOUNT ID</TableHead>
-                        <TableHead className="w-1/10 text-muted-foreground font-medium text-sm pb-4 whitespace-nowrap">PACKAGE</TableHead>
-                        <TableHead className="w-1/10 text-muted-foreground font-medium text-sm pb-4 whitespace-nowrap">FUNDER</TableHead>
-                        <TableHead className="w-1/10 text-muted-foreground font-medium text-sm pb-4 whitespace-nowrap">STATUS</TableHead>
-                        <TableHead className="w-1/10 text-muted-foreground font-medium text-sm pb-4 whitespace-nowrap">DATE</TableHead>
-                        <TableHead className="w-1/10 text-muted-foreground font-medium text-sm pb-4">ACTIONS</TableHead>
+                <TableHeader className="bg-[#0a0a0a]">
+                    <TableRow className="border-gray-800 hover:bg-transparent">
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">UNIT</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">USER</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">ACCOUNT ID</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">PACKAGE</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">FUNDER</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">STATUS</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">DATE</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {data.length === 0 ? (
-                        <TableRow className="border-[#1a1a1a]">
-                            <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                        <TableRow className="border-gray-800">
+                            <TableCell colSpan={8} className="h-24 text-center text-gray-500 italic">
                                 No funder accounts found.
                             </TableCell>
                         </TableRow>
                     ) : (
                         data.map((item) => (
-                            <TableRow key={item.id} className="border-[#1a1a1a] hover:bg-[#111] transition-colors">
-                                <TableCell className="text-white py-4 text-sm font-medium">
+                            <TableRow key={item.id} className="border-gray-800 hover:bg-[#111] transition-colors">
+                                <TableCell className="text-center text-gray-200 text-xs py-4">
                                     {item.accounts?.units?.unit_name || "-"}
                                 </TableCell>
-                                <TableCell className="text-white py-4 text-sm">
+                                <TableCell className="text-center text-gray-200 text-xs py-4">
                                     {item.accounts ? `${item.accounts.first_name} ${item.accounts.last_name}`.trim() : "-"}
                                 </TableCell>
-                                <TableCell className="text-white py-4 text-sm">
+                                <TableCell className="text-center text-gray-200 text-xs py-4">
                                     {item.accounts?.id || "-"}
                                 </TableCell>
-                                <TableCell className="text-white py-4 text-sm">
+                                <TableCell className="text-center text-gray-200 text-xs py-4">
                                     {item.package?.name || "-"}
                                 </TableCell>
-                                <TableCell className="text-white py-4 text-sm">
+                                <TableCell className="text-center text-gray-200 text-xs py-4">
                                     {item.package?.funders ? (
-                                        <span
-                                            className="px-2 py-1 rounded text-xs font-bold"
-                                            style={{
-                                                backgroundColor: item.package.funders.allias_color || "#1c64f2",
-                                                color: item.package.funders.text_color || "white"
-                                            }}
-                                        >
-                                            {item.package.funders.allias || item.package.funders.name}
-                                        </span>
+                                        <div className="flex justify-center">
+                                            <span
+                                                className="px-2 py-1 rounded text-xs font-bold"
+                                                style={{
+                                                    backgroundColor: item.package.funders.allias_color || "#1c64f2",
+                                                    color: item.package.funders.text_color || "white"
+                                                }}
+                                            >
+                                                {item.package.funders.allias || item.package.funders.name}
+                                            </span>
+                                        </div>
                                     ) : (
                                         "-"
                                     )}
                                 </TableCell>
-                                <TableCell className="text-white py-4 text-sm capitalize w-fit">
-                                    <Badge
-                                        variant="outline"
-                                        style={{
-                                            backgroundColor: `${AccountStatusColors[item.status]}15`,
-                                            color: AccountStatusColors[item.status],
-                                            borderColor: `${AccountStatusColors[item.status]}30`,
-                                        }}
-                                        className="font-bold px-3 py-1 text-[10px] uppercase tracking-wider"
-                                    >
-                                        {item.status}
-                                    </Badge>
+                                <TableCell className="text-center text-gray-200 text-xs py-4">
+                                    <div className="flex justify-center">
+                                        <Badge
+                                            variant="outline"
+                                            style={{
+                                                backgroundColor: `${AccountStatusColors[item.status]}15`,
+                                                color: AccountStatusColors[item.status],
+                                                borderColor: `${AccountStatusColors[item.status]}30`,
+                                            }}
+                                            className="font-bold px-3 py-1 text-[10px] uppercase tracking-wider"
+                                        >
+                                            {item.status}
+                                        </Badge>
+                                    </div>
                                 </TableCell>
-                                <TableCell className="text-white py-4 text-sm">
+                                <TableCell className="text-center text-gray-200 text-xs py-4">
                                     {item.created_at ? new Date(item.created_at).toLocaleDateString() : "-"}
                                 </TableCell>
                                 <TableCell className="py-4">
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center justify-center gap-2">
                                         <EditFunderAccountDialog
                                             funderAccount={item}
                                         />

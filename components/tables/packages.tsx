@@ -61,37 +61,37 @@ export const PackagesTable = ({ data, onEdit }: PackagesTableProps) => {
     };
 
     return (
-        <div className="w-full">
+        <div className="border rounded-md border-gray-800 overflow-hidden">
             <Table>
-                <TableHeader className="bg-[#0d0d0d] border-[#1a1a1a]">
-                    <TableRow className="border-[#1a1a1a] hover:bg-transparent">
-                        <TableHead className="w-1/6 text-muted-foreground font-medium text-sm pb-4">FUNDER</TableHead>
-                        <TableHead className="w-1/6 text-muted-foreground font-medium text-sm pb-4">PACKAGE NAME</TableHead>
-                        <TableHead className="w-1/6 text-muted-foreground font-medium text-sm pb-4">BALANCE</TableHead>
-                        <TableHead className="w-1/6 text-muted-foreground font-medium text-sm pb-4">PHASE</TableHead>
-                        <TableHead className="w-1/6 text-muted-foreground font-medium text-sm pb-4">INSTRUMENT</TableHead>
-                        <TableHead className="w-1/6 text-muted-foreground font-medium text-sm pb-4">ACTIONS</TableHead>
+                <TableHeader className="bg-[#0a0a0a]">
+                    <TableRow className="border-gray-800 hover:bg-transparent">
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">FUNDER</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">PACKAGE NAME</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">BALANCE</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">PHASE</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">INSTRUMENT</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {data.length === 0 ? (
-                        <TableRow className="border-[#1a1a1a]">
-                            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                        <TableRow className="border-gray-800">
+                            <TableCell colSpan={6} className="h-24 text-center text-gray-500 italic">
                                 No packages found.
                             </TableCell>
                         </TableRow>
                     ) : (
                         data.map((item) => (
-                            <TableRow key={item.id} className="border-[#1a1a1a] hover:bg-[#111] transition-colors">
-                                <TableCell className="text-white py-4 font-medium text-sm">
+                            <TableRow key={item.id} className="border-gray-800 hover:bg-[#111] transition-colors">
+                                <TableCell className="text-center text-gray-200 text-xs py-4">
                                     {item.funders?.name || "-"}
                                 </TableCell>
-                                <TableCell className="text-white py-4 text-sm">{item.name}</TableCell>
-                                <TableCell className="text-white py-4 text-sm">{item.balance || "-"}</TableCell>
-                                <TableCell className="text-white py-4 text-sm">{item.phase || "-"}</TableCell>
-                                <TableCell className="text-white py-4 text-sm">{item.symbol || "-"}</TableCell>
+                                <TableCell className="text-center text-gray-200 text-xs py-4">{item.name}</TableCell>
+                                <TableCell className="text-center text-gray-200 text-xs py-4">{item.balance || "-"}</TableCell>
+                                <TableCell className="text-center text-gray-200 text-xs py-4">{item.phase || "-"}</TableCell>
+                                <TableCell className="text-center text-gray-200 text-xs py-4">{item.symbol || "-"}</TableCell>
                                 <TableCell className="py-4">
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center justify-center gap-2">
                                         <Button
                                             variant="ghost"
                                             size="icon"
@@ -129,16 +129,16 @@ export const PackagesTable = ({ data, onEdit }: PackagesTableProps) => {
 
 export const PackagesTableSkeleton = () => {
     return (
-        <div className="w-full">
+        <div className="border rounded-md border-gray-800 overflow-hidden">
             <Table>
-                <TableHeader className="bg-[#0d0d0d] border-[#1a1a1a]">
-                    <TableRow className="border-[#1a1a1a] hover:bg-transparent">
-                        <TableHead className="w-1/6 text-muted-foreground font-medium text-sm pb-4">FUNDER</TableHead>
-                        <TableHead className="w-1/6 text-muted-foreground font-medium text-sm pb-4">PACKAGE NAME</TableHead>
-                        <TableHead className="w-1/6 text-muted-foreground font-medium text-sm pb-4">BALANCE</TableHead>
-                        <TableHead className="w-1/6 text-muted-foreground font-medium text-sm pb-4">PHASE</TableHead>
-                        <TableHead className="w-1/6 text-muted-foreground font-medium text-sm pb-4">INSTRUMENT</TableHead>
-                        <TableHead className="w-1/6 text-muted-foreground font-medium text-sm pb-4">ACTIONS</TableHead>
+                <TableHeader className="bg-[#0a0a0a]">
+                    <TableRow className="border-gray-800 hover:bg-transparent">
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">FUNDER</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">PACKAGE NAME</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">BALANCE</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">PHASE</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">INSTRUMENT</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>

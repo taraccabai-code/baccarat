@@ -6,7 +6,7 @@ export async function getFranchises() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("franchise")
-    .select("*")
+    .select("id, created_at, franchise_name, franchise_code, investor_name")
     .order("created_at", { ascending: false });
 
   if (error) {

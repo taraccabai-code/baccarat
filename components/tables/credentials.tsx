@@ -85,31 +85,31 @@ export const CredentialsTable = ({ data, funders = [] }: CredentialsTableProps) 
     };
 
     return (
-        <div className="w-full">
+        <div className="border rounded-md border-gray-800 overflow-hidden">
             <Table>
                 <TableHeader className="bg-[#0a0a0a]">
                     <TableRow className="border-gray-800 hover:bg-transparent">
-                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">ACCOUNT NAME</TableHead>
-                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">USERNAME</TableHead>
-                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">PASSWORD</TableHead>
-                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">ACTIONS</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">ACCOUNT NAME</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">USERNAME</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">PASSWORD</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {data.length === 0 ? (
-                        <TableRow className="border-[#1a1a1a]">
-                            <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                        <TableRow className="border-gray-800">
+                            <TableCell colSpan={4} className="h-24 text-center text-gray-500 italic">
                                 No credentials found.
                             </TableCell>
                         </TableRow>
                     ) : (
                         data.map((credential) => (
-                            <TableRow key={credential.id} className="border-gray-800 hover:bg-[#1a1a1a]/50 transition-colors">
-                                <TableCell className="text-center text-gray-200 text-xs py-3">
+                            <TableRow key={credential.id} className="border-gray-800 hover:bg-[#111] transition-colors">
+                                <TableCell className="text-center text-gray-200 text-xs py-4">
                                     {credential.account_name || "-"}
                                 </TableCell>
-                                <TableCell className="text-center text-gray-200 text-xs py-3">{credential.username || "-"}</TableCell>
-                                <TableCell className="text-center text-gray-200 text-xs py-3 font-mono">
+                                <TableCell className="text-center text-gray-200 text-xs py-4">{credential.username || "-"}</TableCell>
+                                <TableCell className="text-center text-gray-200 text-xs py-4 font-mono">
                                     <div className="flex items-center justify-center gap-2 group">
                                         <span>********</span>
                                         <Button
@@ -126,19 +126,20 @@ export const CredentialsTable = ({ data, funders = [] }: CredentialsTableProps) 
                                         </Button>
                                     </div>
                                 </TableCell>
-                                <TableCell className="text-center py-3">
+                                <TableCell className="py-4">
                                     <div className="flex items-center justify-center gap-2">
                                         <EditCredentialDialog
                                             credential={credential}
                                             funders={funders}
                                         />
-                                        <button
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 hover:bg-[#262626] text-muted-foreground hover:text-red-500 transition-colors"
                                             onClick={() => handleDeleteClick(credential.id, credential.account_name || "this credential")}
-                                            className="p-1.5 text-gray-400 hover:text-red-500 transition-colors bg-gray-800/50 rounded-md border border-gray-700 hover:border-red-500/50"
-                                            title="Delete Credential"
                                         >
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                        </button>
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
                                     </div>
                                 </TableCell>
                             </TableRow>
@@ -160,35 +161,35 @@ export const CredentialsTable = ({ data, funders = [] }: CredentialsTableProps) 
 
 export const CredentialsTableSkeleton = () => {
     return (
-        <div className="w-full">
+        <div className="border rounded-md border-gray-800 overflow-hidden">
             <Table>
                 <TableHeader className="bg-[#0a0a0a]">
                     <TableRow className="border-gray-800 hover:bg-transparent">
-                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">ACCOUNT NAME</TableHead>
-                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">USERNAME</TableHead>
-                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">PASSWORD</TableHead>
-                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">ACTIONS</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">ACCOUNT NAME</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">USERNAME</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">PASSWORD</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {[1, 2, 3, 4, 5].map((i) => (
-                        <TableRow key={i} className="border-gray-800 hover:bg-transparent">
-                            <TableCell className="py-3">
+                        <TableRow key={i} className="border-gray-800">
+                            <TableCell>
                                 <div className="flex justify-center">
                                     <Skeleton className="h-4 w-[150px] bg-[#1a1a1a]" />
                                 </div>
                             </TableCell>
-                            <TableCell className="py-3">
+                            <TableCell>
                                 <div className="flex justify-center">
                                     <Skeleton className="h-4 w-[120px] bg-[#1a1a1a]" />
                                 </div>
                             </TableCell>
-                            <TableCell className="py-3">
+                            <TableCell>
                                 <div className="flex justify-center">
                                     <Skeleton className="h-4 w-[100px] bg-[#1a1a1a]" />
                                 </div>
                             </TableCell>
-                            <TableCell className="py-3">
+                            <TableCell>
                                 <div className="flex items-center justify-center gap-2">
                                     <Skeleton className="h-8 w-8 rounded-md bg-[#1a1a1a]" />
                                     <Skeleton className="h-8 w-8 rounded-md bg-[#1a1a1a]" />

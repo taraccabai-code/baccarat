@@ -11,6 +11,7 @@ import { Save, Loader2, ChevronDown } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { createAccount, updateAccount } from "@/helper/accounts"
+import { Franchise } from "@/types/franchise"
 
 const userAccountSchema = z.object({
     first_name: z.string().min(1, "First name is required"),
@@ -34,7 +35,7 @@ type UserAccountFormValues = z.infer<typeof userAccountSchema>
 interface UserAccountsFormProps {
     initialData?: any | null
     units?: any[]
-    franchises?: any[]
+    franchises?: Franchise[]
     setAccounts: React.Dispatch<React.SetStateAction<any[]>>
     onSuccess?: () => void
     onCancel?: () => void
@@ -303,10 +304,10 @@ export const UserAccountsForm = ({ initialData, units = [], franchises = [], set
                                 .map((franchise) => (
                                     <option
                                         key={franchise.id}
-                                        value={franchise.name}
+                                        value={franchise.franchise_name || ""}
                                         className="text-white"
                                     >
-                                        {franchise.name}
+                                        {franchise.franchise_name}
                                     </option>
                                 ))}
                         </select>

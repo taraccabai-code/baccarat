@@ -56,3 +56,17 @@ export async function updatePlatformWebsite(id: string | number, formData: Parti
 
     return data;
 }
+
+export async function deletePlatformWebsite(id: string | number) {
+    const supabase = await createClient2();
+    const { error } = await supabase
+        .from("platform_website")
+        .delete()
+        .eq("id", id);
+
+    if (error) {
+        throw new Error(error.message);
+    }
+
+    return true;
+}

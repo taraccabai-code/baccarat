@@ -6,43 +6,46 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 export const FunderAccountsTableSkeleton = () => {
     return (
-        <div className="w-full">
+        <div className="border rounded-md border-gray-800 overflow-hidden">
             <Table>
-                <TableHeader className="bg-[#0d0d0d] border-[#1a1a1a]">
-                    <TableRow className="border-[#1a1a1a] hover:bg-transparent">
-                        <TableHead className="w-1/10 text-muted-foreground font-medium text-sm pb-4 whitespace-nowrap">UNIT</TableHead>
-                        <TableHead className="w-1/10 text-muted-foreground font-medium text-sm pb-4 whitespace-nowrap">USER</TableHead>
-                        <TableHead className="w-1/10 text-muted-foreground font-medium text-sm pb-4 whitespace-nowrap">ACCOUNT ID</TableHead>
-                        <TableHead className="w-1/10 text-muted-foreground font-medium text-sm pb-4 whitespace-nowrap">PACKAGE</TableHead>
-                        <TableHead className="w-1/10 text-muted-foreground font-medium text-sm pb-4 whitespace-nowrap">FUNDER</TableHead>
-                        <TableHead className="w-1/10 text-muted-foreground font-medium text-sm pb-4 whitespace-nowrap">STATUS</TableHead>
-                        <TableHead className="w-1/10 text-muted-foreground font-medium text-sm pb-4 whitespace-nowrap">DATE</TableHead>
-                        <TableHead className="w-1/10 text-muted-foreground font-medium text-sm pb-4">ACTIONS</TableHead>
+                <TableHeader className="bg-[#0a0a0a]">
+                    <TableRow className="border-gray-800 hover:bg-transparent">
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">UNIT</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">USER</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">ACCOUNT ID</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">PACKAGE</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">FUNDER</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">STATUS</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">DATE</TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {[1, 2, 3, 4, 5].map((i) => (
-                        <TableRow key={i} className="border-[#1a1a1a] hover:bg-transparent">
-                            <TableCell className="py-4">
-                                <Skeleton className="h-4 w-[80px] bg-[#1a1a1a]" />
+                        <TableRow key={i} className="border-gray-800 hover:bg-transparent">
+                            <TableCell>
+                                <Skeleton className="h-4 w-12 mx-auto bg-[#1a1a1a]" />
                             </TableCell>
-                            <TableCell className="py-4">
-                                <Skeleton className="h-4 w-[150px] bg-[#1a1a1a]" />
+                            <TableCell>
+                                <Skeleton className="h-4 w-28 mx-auto bg-[#1a1a1a]" />
                             </TableCell>
-                            <TableCell className="py-4">
-                                <Skeleton className="h-4 w-[60px] bg-[#1a1a1a]" />
+                            <TableCell>
+                                <Skeleton className="h-4 w-12 mx-auto bg-[#1a1a1a]" />
                             </TableCell>
-                            <TableCell className="py-4">
-                                <Skeleton className="h-4 w-[100px] bg-[#1a1a1a]" />
+                            <TableCell>
+                                <Skeleton className="h-4 w-20 mx-auto bg-[#1a1a1a]" />
                             </TableCell>
-                            <TableCell className="py-4">
-                                <Skeleton className="h-4 w-[80px] bg-[#1a1a1a]" />
+                            <TableCell>
+                                <Skeleton className="h-4 w-16 mx-auto bg-[#1a1a1a]" />
                             </TableCell>
-                            <TableCell className="py-4">
-                                <Skeleton className="h-4 w-[100px] bg-[#1a1a1a]" />
+                            <TableCell>
+                                <Skeleton className="h-6 w-20 mx-auto bg-[#1a1a1a] rounded-full" />
                             </TableCell>
-                            <TableCell className="py-4">
-                                <div className="flex items-center gap-2">
+                            <TableCell>
+                                <Skeleton className="h-4 w-20 mx-auto bg-[#1a1a1a]" />
+                            </TableCell>
+                            <TableCell>
+                                <div className="flex items-center justify-center gap-2">
                                     <Skeleton className="h-8 w-8 rounded-md bg-[#1a1a1a]" />
                                     <Skeleton className="h-8 w-8 rounded-md bg-[#1a1a1a]" />
                                 </div>

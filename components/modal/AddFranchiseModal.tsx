@@ -19,10 +19,9 @@ interface AddFranchiseModalProps {
 export const AddFranchiseModal = ({ isOpen, onClose, onSuccess }: AddFranchiseModalProps) => {
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
-        name: "",
-        code: "",
+        franchise_name: "",
+        franchise_code: "",
         investor_name: "",
-        description: "",
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -31,17 +30,17 @@ export const AddFranchiseModal = ({ isOpen, onClose, onSuccess }: AddFranchiseMo
     };
 
     const generateCode = () => {
-        if (formData.name) {
+        if (formData.franchise_name) {
             // Simple generation: first 3 letters of name uppercased + random number
-            const prefix = formData.name.substring(0, 3).toUpperCase();
+            const prefix = formData.franchise_name.substring(0, 3).toUpperCase();
             const random = Math.floor(100 + Math.random() * 900);
-            setFormData(prev => ({ ...prev, code: `${prefix}-${random}` }));
+            setFormData(prev => ({ ...prev, franchise_code: `${prefix}-${random}` }));
         }
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData.name || !formData.code || !formData.investor_name) {
+        if (!formData.franchise_name || !formData.franchise_code || !formData.investor_name) {
             toast.error("Please fill in all required fields");
             return;
         }
@@ -51,10 +50,9 @@ export const AddFranchiseModal = ({ isOpen, onClose, onSuccess }: AddFranchiseMo
             await createFranchise(formData);
             toast.success("Franchise created successfully");
             setFormData({
-                name: "",
-                code: "",
+                franchise_name: "",
+                franchise_code: "",
                 investor_name: "",
-                description: "",
             });
             onSuccess();
             onClose();
@@ -74,12 +72,12 @@ export const AddFranchiseModal = ({ isOpen, onClose, onSuccess }: AddFranchiseMo
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="name">Franchise Name</Label>
+                        <Label htmlFor="franchise_name">Franchise Name</Label>
                         <Input
-                            id="name"
-                            name="name"
+                            id="franchise_name"
+                            name="franchise_name"
                             placeholder="e.g. Alpha Ventures"
-                            value={formData.name}
+                            value={formData.franchise_name}
                             onChange={handleChange}
                             className="bg-[#111111] border-gray-800 focus:border-blue-600"
                         />
@@ -87,7 +85,7 @@ export const AddFranchiseModal = ({ isOpen, onClose, onSuccess }: AddFranchiseMo
 
                     <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                            <Label htmlFor="code">Franchise Code</Label>
+                            <Label htmlFor="franchise_code">Franchise Code</Label>
                             <button
                                 type="button"
                                 onClick={generateCode}
@@ -97,10 +95,10 @@ export const AddFranchiseModal = ({ isOpen, onClose, onSuccess }: AddFranchiseMo
                             </button>
                         </div>
                         <Input
-                            id="code"
-                            name="code"
+                            id="franchise_code"
+                            name="franchise_code"
                             placeholder="e.g. ALP-101"
-                            value={formData.code}
+                            value={formData.franchise_code}
                             onChange={handleChange}
                             className="bg-[#111111] border-gray-800 focus:border-blue-600 uppercase"
                         />
@@ -115,18 +113,6 @@ export const AddFranchiseModal = ({ isOpen, onClose, onSuccess }: AddFranchiseMo
                             value={formData.investor_name}
                             onChange={handleChange}
                             className="bg-[#111111] border-gray-800 focus:border-blue-600"
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="description">Description (Optional)</Label>
-                        <Textarea
-                            id="description"
-                            name="description"
-                            placeholder="Brief description..."
-                            value={formData.description}
-                            onChange={handleChange}
-                            className="bg-[#111111] border-gray-800 focus:border-blue-600 min-h-[80px]"
                         />
                     </div>
 

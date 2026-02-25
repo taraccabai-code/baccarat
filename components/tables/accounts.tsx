@@ -74,61 +74,63 @@ export const AccountsTable = ({ data, units = [], franchises = [], setAccounts }
         }
     };
     return (
-        <div className="w-full">
-            <Table>
-                <TableHeader className="bg-[#0d0d0d] border-[#1a1a1a]">
-                    <TableRow className="border-[#1a1a1a] hover:bg-transparent">
-                        <TableHead className="w-[100px] text-muted-foreground font-medium text-sm pb-4">ACTIONS</TableHead>
-                        <TableHead className="text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">FRANCHISE</TableHead>
-                        <TableHead className="text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">FIRST NAME</TableHead>
-                        <TableHead className="text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">MIDDLE NAME</TableHead>
-                        <TableHead className="text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">LAST NAME</TableHead>
-                        <TableHead className="text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">EMAIL</TableHead>
-                        <TableHead className="text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">ADDRESS</TableHead>
-                        <TableHead className="text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">CONTACT NUMBER 1</TableHead>
-                        <TableHead className="text-muted-foreground font-medium text-sm whitespace-nowrap pb-4">CONTACT NUMBER 2</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {data.length === 0 ? (
-                        <TableRow className="border-[#1a1a1a]">
-                            <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
-                                No accounts found.
-                            </TableCell>
+        <div className="w-full space-y-4">
+            <div className="border rounded-md border-gray-800 overflow-hidden">
+                <Table>
+                    <TableHeader className="bg-[#0a0a0a]">
+                        <TableRow className="border-gray-800 hover:bg-transparent">
+                            <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">Actions</TableHead>
+                            <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">FRANCHISE</TableHead>
+                            <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">FIRST NAME</TableHead>
+                            <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">MIDDLE NAME</TableHead>
+                            <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">LAST NAME</TableHead>
+                            <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">EMAIL</TableHead>
+                            <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">ADDRESS</TableHead>
+                            <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">CONTACT NUMBER 1</TableHead>
+                            <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">CONTACT NUMBER 2</TableHead>
                         </TableRow>
-                    ) : (
-                        data.map((account) => (
-                            <TableRow key={account.id} className="border-[#1a1a1a] hover:bg-[#111] transition-colors">
-                                <TableCell className="py-4">
-                                    <div className="flex items-center gap-2">
-                                        <EditUserAccountDialog account={account} units={units} franchises={franchises} setAccounts={setAccounts} />
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 hover:bg-[#262626] text-muted-foreground hover:text-red-500 transition-colors"
-                                            onClick={() => handleDeleteClick(account.id, account.first_name, account.last_name)}
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
+                    </TableHeader>
+                    <TableBody>
+                        {data.length === 0 ? (
+                            <TableRow className="border-gray-800">
+                                <TableCell colSpan={9} className="h-24 text-center text-gray-500 italic">
+                                    No accounts found.
                                 </TableCell>
-                                <TableCell className="text-white py-4">{account.franchise || "-"}</TableCell>
-                                <TableCell className="text-white py-4">{account.first_name}</TableCell>
-                                <TableCell className="text-white py-4">{account.middle_name || "-"}</TableCell>
-                                <TableCell className="text-white py-4">{account.last_name}</TableCell>
-                                <TableCell className="text-white py-4">{account.email || "-"}</TableCell>
-                                <TableCell className="text-white py-4">
-                                    {[account.address, account.city, account.province, account.zip_code]
-                                        .filter(Boolean)
-                                        .join(", ") || "-"}
-                                </TableCell>
-                                <TableCell className="text-white py-4">{account.contact_number_1 || "-"}</TableCell>
-                                <TableCell className="text-white py-4">{account.contact_number_2 || "-"}</TableCell>
                             </TableRow>
-                        ))
-                    )}
-                </TableBody>
-            </Table>
+                        ) : (
+                            data.map((account) => (
+                                <TableRow key={account.id} className="border-gray-800">
+                                    <TableCell>
+                                        <div className="flex items-center justify-center gap-2">
+                                            <EditUserAccountDialog account={account} units={units} franchises={franchises} setAccounts={setAccounts} />
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 hover:bg-[#262626] text-muted-foreground hover:text-red-500 transition-colors"
+                                                onClick={() => handleDeleteClick(account.id, account.first_name, account.last_name)}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-center text-gray-200 text-xs">{account.franchise || "-"}</TableCell>
+                                    <TableCell className="text-center text-gray-200 text-xs">{account.first_name}</TableCell>
+                                    <TableCell className="text-center text-gray-200 text-xs">{account.middle_name || "-"}</TableCell>
+                                    <TableCell className="text-center text-gray-200 text-xs">{account.last_name}</TableCell>
+                                    <TableCell className="text-center text-gray-200 text-xs">{account.email || "-"}</TableCell>
+                                    <TableCell className="text-center text-gray-200 text-xs">
+                                        {[account.address, account.city, account.province, account.zip_code]
+                                            .filter(Boolean)
+                                            .join(", ") || "-"}
+                                    </TableCell>
+                                    <TableCell className="text-center text-gray-200 text-xs">{account.contact_number_1 || "-"}</TableCell>
+                                    <TableCell className="text-center text-gray-200 text-xs">{account.contact_number_2 || "-"}</TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
 
             <DeleteAccountModal
                 isOpen={isDeleteModalOpen}

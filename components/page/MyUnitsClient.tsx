@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { getUnitsWithCounts, updateUnitStatus, archiveUnit, checkUnitHealth } from '@/helper/units'
+import { updateUnitStatus, archiveUnit } from '@/helper/units'
 import { UnitsSearch } from '@/components/search/UnitsSearch'
 import { Button } from '@/components/ui/button'
 import { Plus, RefreshCw, Filter, ChevronDown, Check } from 'lucide-react'
@@ -14,6 +14,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { getFranchises } from '@/helper/franchise'
 import { Franchise } from '@/types/franchise'
+import { getBaccaratData } from '@/helper/baccarat'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -27,8 +28,10 @@ interface MyUnitsClientProps {
     initialUnits: any[];
 }
 
+
+
 export default function MyUnitsClient({ initialUnits }: MyUnitsClientProps) {
-    const [units, setUnits] = useState(initialUnits);
+    const [units, setUnits] = useState<any[]>(initialUnits);
     const [searchQuery, setSearchQuery] = useState("");
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
@@ -40,67 +43,25 @@ export default function MyUnitsClient({ initialUnits }: MyUnitsClientProps) {
     const [franchises, setFranchises] = useState<Franchise[]>([]);
     const [selectedFranchiseId, setSelectedFranchiseId] = useState<string | null>(null);
 
-    // Use a ref to prevent multiple simultaneous health checks
-    const isCheckingHealth = useRef(false);
-
-    const handleHealthCheck = useCallback(async (unitsToCheck: any[]) => {
-        if (isCheckingHealth.current || unitsToCheck.length === 0) return;
-
-        isCheckingHealth.current = true;
-        const checkToast = toast.loading(`Checking health for ${unitsToCheck.length} units...`);
-
-        try {
-            let healthyCount = 0;
-            let failedCount = 0;
-
-            const results = await Promise.all(unitsToCheck.map(async (unit) => {
-                if (!unit.api_base_url) return null;
-
-                const isHealthy = await checkUnitHealth(unit.api_base_url);
-                const newStatus = isHealthy ? "enabled" : "not connected" as any;
-
-                // Only update if status changed
-                if (unit.status !== newStatus) {
-                    await updateUnitStatus(unit.id, newStatus);
-                    if (isHealthy) healthyCount++;
-                    else failedCount++;
-                    return { id: unit.id, status: newStatus };
-                }
-
-                if (isHealthy) healthyCount++;
-                else failedCount++;
-                return null;
-            }));
-
-            const updates = results.filter(r => r !== null);
-            if (updates.length > 0) {
-                setUnits((prev: any) => prev.map((u: any) => {
-                    const result = updates.find(r => r!.id === u.id);
-                    return result ? { ...u, status: result.status } : u;
-                }));
-            }
-
-            toast.success(`Health check complete: ${healthyCount} healthy, ${failedCount} failed`, {
-                id: checkToast,
-            });
-        } catch (err) {
-            toast.error("Failed to complete health check", {
-                id: checkToast,
-            });
-        } finally {
-            isCheckingHealth.current = false;
-        }
-    }, []);
-
     const handleRefresh = async () => {
         setIsRefreshing(true);
         try {
-            const data = await getUnitsWithCounts();
-            setUnits(data as any);
-            toast.success("Units refreshed");
-            // Run health check after refresh
-            const unitsWithApi = data.filter((u: any) => u.api_base_url && !u.archived);
-            handleHealthCheck(unitsWithApi);
+            const data = await getBaccaratData();
+            // Map the baccarat data to match the Unit interface expected by UnitsList
+            const mappedUnits = data.map((item: any) => ({
+                id: item.id.toString(),
+                unit_id: item.id.toString(),
+                unit_name: item.units || item.pc_name || "Unknown PC",
+                status: item.status?.toLowerCase() || "disabled",
+                balance: item.user_balance || item.balance,
+                level: item.level,
+                pattern: item.pattern,
+                strategy: item.strategy,
+                archived: false,
+                franchise: null // We don't have franchise info from baccarat helper yet
+            }));
+            setUnits(mappedUnits);
+            toast.success("Units refreshed from baccarat monitor");
         } catch (error) {
             toast.error("Failed to refresh units");
         } finally {
@@ -117,12 +78,8 @@ export default function MyUnitsClient({ initialUnits }: MyUnitsClientProps) {
         }
     };
 
-    // Run health check on mount (every visit)
+    // Run on mount
     useEffect(() => {
-        const unitsWithApi = units.filter((u: any) => u.api_base_url && !u.archived);
-        if (unitsWithApi.length > 0) {
-            handleHealthCheck(unitsWithApi);
-        }
         fetchFranchises();
     }, []); // Empty dependency array runs once on mount
 
@@ -172,8 +129,8 @@ export default function MyUnitsClient({ initialUnits }: MyUnitsClientProps) {
             const query = searchQuery.toLowerCase();
             const matchesSearch = (
                 unit.unit_name?.toLowerCase().includes(query) ||
-                unit.franchise?.name?.toLowerCase().includes(query) ||
-                unit.franchise?.code?.toLowerCase().includes(query)
+                unit.franchise?.franchise_name?.toLowerCase().includes(query) ||
+                unit.franchise?.franchise_code?.toLowerCase().includes(query)
             );
             const matchesFranchise = !selectedFranchiseId || unit.franchise_id === selectedFranchiseId;
             return !unit.archived && matchesSearch && matchesFranchise;
@@ -215,7 +172,7 @@ export default function MyUnitsClient({ initialUnits }: MyUnitsClientProps) {
                                     <Filter className="h-4 w-4" />
                                     <span className="hidden sm:inline">
                                         {selectedFranchiseId
-                                            ? franchises.find(f => f.id === selectedFranchiseId)?.name
+                                            ? franchises.find(f => f.id === selectedFranchiseId)?.franchise_name
                                             : "Franchises"}
                                     </span>
                                     <ChevronDown className="h-4 w-4 opacity-50" />
@@ -244,7 +201,7 @@ export default function MyUnitsClient({ initialUnits }: MyUnitsClientProps) {
                                         <div className="w-4 flex items-center justify-center">
                                             {selectedFranchiseId === f.id && <Check className="h-3 w-3 text-blue-500" />}
                                         </div>
-                                        {f.name}
+                                        {f.franchise_name}
                                     </DropdownMenuItem>
                                 ))}
                             </DropdownMenuContent>
