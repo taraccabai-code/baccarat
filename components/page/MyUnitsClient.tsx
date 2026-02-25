@@ -14,7 +14,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { getFranchises } from '@/helper/franchise'
 import { Franchise } from '@/types/franchise'
-import { getBaccaratData } from '@/helper/baccarat'
+import { getBaccaratData, updateBaccaratRow } from '@/helper/baccarat'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -86,7 +86,7 @@ export default function MyUnitsClient({ initialUnits }: MyUnitsClientProps) {
         fetchFranchises();
     }, []); // Empty dependency array runs once on mount
 
-    const handleEdit = (unit: Unit) => {
+    const handleEdit = (unit: any) => {
         setUnitToEdit(unit);
         setIsUnitModalOpen(true);
     };
@@ -120,7 +120,13 @@ export default function MyUnitsClient({ initialUnits }: MyUnitsClientProps) {
                 u.id === unitId ? { ...u, status: newStatus } : u
             ));
 
-            await updateUnitStatus(unitId, newStatus);
+            await updateBaccaratRow({
+                id: unitId,
+                status: newStatus,
+                level: null,
+                pattern: null,
+                target_profit: null
+            });
         } catch (error: any) {
             toast.error("Failed to update status");
             handleRefresh();

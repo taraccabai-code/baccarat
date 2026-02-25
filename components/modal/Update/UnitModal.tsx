@@ -16,13 +16,11 @@ import Link from "next/link"
 interface UnitModalProps {
     isOpen: boolean
     onClose: () => void
-    initialData?: Unit | null
+    initialData?: any | null
     onSuccess?: () => void
-    franchises?: Franchise[]
-    units?: Unit[]
 }
 
-export function UnitModal({ isOpen, onClose, initialData, onSuccess, franchises, units }: UnitModalProps) {
+export function UnitModal({ isOpen, onClose, initialData, onSuccess }: UnitModalProps) {
     const isEditing = !!initialData
 
     const handleSuccess = () => {
@@ -46,8 +44,6 @@ export function UnitModal({ isOpen, onClose, initialData, onSuccess, franchises,
                     <UnitForm
                         initialData={initialData}
                         onSuccess={handleSuccess}
-                        franchises={franchises}
-                        units={units}
                     />
                 </div>
             </DialogContent>

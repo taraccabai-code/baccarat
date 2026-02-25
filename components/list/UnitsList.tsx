@@ -2,7 +2,11 @@ import React from 'react'
 import { Unit } from '@/types/units'
 import { UnitCard } from '../card/CardUnit'
 
-interface UnitWithCounts extends Unit {
+interface UnitWithCounts extends Partial<Unit> {
+    id: string;
+    unit_name: string;
+    status: any;
+    unit_id: string;
     funder_counts?: {
         allias: string;
         count: number;
@@ -15,15 +19,13 @@ interface UnitWithCounts extends Unit {
         username: string | null;
         password: string | null;
     } | null;
-    balance?: number | string | null;
-    level?: number | null;
-    pattern?: string | null;
-    strategy?: string | null;
+    target_profit?: number | null;
+    bet_size?: number | string | null;
 }
 
 interface UnitsListProps {
     units: UnitWithCounts[];
-    onEdit?: (unit: Unit) => void;
+    onEdit?: (unit: any) => void;
     onArchive?: (id: string, name: string) => void;
     onStatusChange?: (id: string, status: any) => void;
 }
@@ -63,11 +65,11 @@ const UnitsList = ({ units, onEdit, onArchive, onStatusChange }: UnitsListProps)
                     key={unit.id}
                     id={unit.id}
                     code={unit.unit_name}
-                    shortName={unit.franchise?.code || "UN"}
-                    company={unit.franchise?.name || undefined}
+                    shortName={unit.franchise?.franchise_code || "UN"}
+                    company={unit.franchise?.franchise_name || undefined}
                     status={unit.status || "disabled"}
-                    serial={unit.unit_id.split("-")[0].toUpperCase()}
-                    owner={unit.franchise?.name || "Unknown"}
+                    serial={unit.unit_id?.split("-")[0]?.toUpperCase() || "N/A"}
+                    owner={unit.franchise?.franchise_name || "Unknown"}
                     accentColor={(unit.franchise as any)?.color || "border-gray-600"}
                     badgeBg={(unit.franchise as any)?.color?.replace('border', 'bg').replace('500', '600') || "bg-gray-600"}
                     badgeText="text-white"
