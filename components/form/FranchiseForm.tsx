@@ -16,10 +16,9 @@ import { toast } from "sonner"
 import Swal from "sweetalert2"
 
 const franchiseSchema = z.object({
-    name: z.string().min(1, "Franchise name is required"),
-    code: z.string().min(1, "Franchise code is required"),
+    franchise_name: z.string().min(1, "Franchise name is required"),
+    franchise_code: z.string().min(1, "Franchise code is required"),
     investor_name: z.string().min(1, "Investor name is required"),
-    description: z.string().optional(),
 })
 
 type FranchiseFormValues = z.infer<typeof franchiseSchema>
@@ -35,35 +34,44 @@ export const FranchiseForm = ({ initialData }: FranchiseFormProps) => {
     const {
         register,
         handleSubmit,
+        setValue,
+        watch,
         formState: { errors },
     } = useForm<FranchiseFormValues>({
         resolver: zodResolver(franchiseSchema),
         defaultValues: {
-            name: initialData?.name || "",
-            code: initialData?.code || "",
+            franchise_name: initialData?.franchise_name || "",
+            franchise_code: initialData?.franchise_code || "",
             investor_name: initialData?.investor_name || "",
-            description: initialData?.description || "",
         },
     })
+
+    const franchise_name = watch("franchise_name")
+
+    const generateCode = () => {
+        if (franchise_name) {
+            const prefix = franchise_name.substring(0, 3).toUpperCase();
+            const random = Math.floor(100 + Math.random() * 900);
+            setValue("franchise_code", `${prefix}-${random}`);
+        }
+    }
 
     const onSubmit = async (data: FranchiseFormValues) => {
         setIsPending(true)
         try {
             if (initialData?.id) {
                 const payload: UpdateFranchise = {
-                    name: data.name,
-                    code: data.code,
+                    franchise_name: data.franchise_name,
+                    franchise_code: data.franchise_code,
                     investor_name: data.investor_name,
-                    description: data.description ?? null,
                 }
                 await updateFranchise(initialData.id, payload)
                 toast.success("Franchise updated successfully")
             } else {
                 const payload: CreateFranchise = {
-                    name: data.name,
-                    code: data.code,
+                    franchise_name: data.franchise_name,
+                    franchise_code: data.franchise_code,
                     investor_name: data.investor_name,
-                    description: data.description ?? null,
                 }
                 await createFranchise(payload)
                 toast.success("Franchise created successfully")
@@ -89,29 +97,40 @@ export const FranchiseForm = ({ initialData }: FranchiseFormProps) => {
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-2">
-                <Label htmlFor="name" className="text-white">
+                <Label htmlFor="franchise_name" className="text-white">
                     Franchise Name <span className="text-red-400">*</span>
                 </Label>
                 <Input
-                    id="name"
-                    {...register("name")}
+                    id="franchise_name"
+                    {...register("franchise_name")}
                     className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500"
                     placeholder="Enter franchise name"
                 />
-                {errors.name && <p className="text-xs text-red-500">{errors.name.message}</p>}
+                {errors.franchise_name && <p className="text-xs text-red-500">{errors.franchise_name.message}</p>}
             </div>
 
             <div className="space-y-2">
-                <Label htmlFor="code" className="text-white">
-                    Franchise Code <span className="text-red-400">*</span>
-                </Label>
+                <div className="flex justify-between items-center">
+                    <Label htmlFor="franchise_code" className="text-white">
+                        Franchise Code <span className="text-red-400">*</span>
+                    </Label>
+                    <Button 
+                        type="button" 
+                        variant="link" 
+                        size="sm" 
+                        onClick={generateCode}
+                        className="text-blue-400 hover:text-blue-300 h-auto p-0"
+                    >
+                        Generate Code
+                    </Button>
+                </div>
                 <Input
-                    id="code"
-                    {...register("code")}
-                    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500"
+                    id="franchise_code"
+                    {...register("franchise_code")}
+                    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500 uppercase"
                     placeholder="Enter franchise code"
                 />
-                {errors.code && <p className="text-xs text-red-500">{errors.code.message}</p>}
+                {errors.franchise_code && <p className="text-xs text-red-500">{errors.franchise_code.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -125,19 +144,6 @@ export const FranchiseForm = ({ initialData }: FranchiseFormProps) => {
                     placeholder="Enter investor name"
                 />
                 {errors.investor_name && <p className="text-xs text-red-500">{errors.investor_name.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-                <Label htmlFor="description" className="text-white">
-                    Description
-                </Label>
-                <Textarea
-                    id="description"
-                    {...register("description")}
-                    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500 min-h-[100px]"
-                    placeholder="Enter franchise description"
-                />
-                {errors.description && <p className="text-xs text-red-500">{errors.description.message}</p>}
             </div>
 
             <div className="flex justify-end gap-3 pt-6 border-t border-gray-800">
