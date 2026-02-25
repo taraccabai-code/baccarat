@@ -2,18 +2,17 @@
 
 import React, { useEffect, useState } from "react";
 import { UnitCard } from "../card/CardUnit";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, createClient2 } from "@/lib/supabase/client";
 import { getFranchiseStyles } from "@/lib/utils";
 import { UnitStatus } from "@/types/units";
 import { ArchiveUnitModal } from "@/components/modal/ArchieveUniit";
 import { toast } from "sonner";
 
-import { getUnitsWithCounts, updateUnitStatus, archiveUnit, checkUnitHealth, getUnits } from "@/helper/units";
+import { getBaccaratData, updateBaccaratRow } from "@/helper/baccarat";
+import { getUnitsWithCounts, archiveUnit } from "@/helper/units";
 import { getFranchises } from "@/helper/franchise";
 import { Franchise } from "@/types/franchise";
 import { UnitModal } from "../modal/Update/UnitModal";
-import { SearchBarHeader } from "../ui/search-bar-header";
-import { Unit } from "@/types/units";
 
 interface UnitsRealtimeProps {
     initialData: any[];
@@ -38,7 +37,7 @@ export const UnitsRealtime = React.forwardRef(({ initialData, searchQuery: exter
     const [isArchiving, setIsArchiving] = useState(false);
 
     const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
-    const [unitToEdit, setUnitToEdit] = useState<Unit | null>(null);
+    const [unitToEdit, setUnitToEdit] = useState<any | null>(null);
 
     const fetchLatestData = async () => {
         const [latestUnits, latestFranchises] = await Promise.all([
@@ -83,16 +82,31 @@ export const UnitsRealtime = React.forwardRef(({ initialData, searchQuery: exter
             })
             .subscribe();
 
+        const supabase2 = createClient2();
+        const botChannel = supabase2
+            .channel('bot_monitoring_realtime')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'bot_monitoring' }, () => {
+                fetchLatestData();
+            })
+            .subscribe();
+
         return () => {
             supabase.removeChannel(channel);
+            supabase.removeChannel(botChannel);
         };
     }, []);
 
     const handleStatusChange = async (unitId: string, newStatus: UnitStatus) => {
         try {
-            await updateUnitStatus(unitId, newStatus);
+            await updateBaccaratRow({
+                id: unitId,
+                status: newStatus,
+                level: null,
+                pattern: null,
+                target_profit: null
+            });
         } catch (error: any) {
-            console.error("Error updating unit status:");
+            console.error("Error updating unit status:", error);
             toast.error("Failed to update status");
         }
     }
@@ -133,9 +147,9 @@ export const UnitsRealtime = React.forwardRef(({ initialData, searchQuery: exter
     }
 
     const filteredUnits = units.filter(unit => {
-        const matchesSearch = unit.unit_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            unit.franchise?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            unit.franchise?.code?.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSearch = unit.unit_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            unit.franchise?.franchise_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            unit.franchise?.franchise_code?.toLowerCase().includes(searchQuery.toLowerCase());
         return !unit.archived && matchesSearch;
     });
 
@@ -147,17 +161,17 @@ export const UnitsRealtime = React.forwardRef(({ initialData, searchQuery: exter
         <div className="flex flex-col h-full">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6">
                 {filteredUnits.map((unit) => {
-                    const styles = getFranchiseStyles(unit.franchise?.code);
+                    const styles = getFranchiseStyles(unit.franchise?.franchise_code);
                     return (
                         <UnitCard
                             key={unit.id}
                             id={unit.id}
                             code={unit.unit_name}
-                            shortName={unit.franchise?.code || "UN"}
-                            company={unit.franchise?.name}
+                            shortName={unit.franchise?.franchise_code || "UN"}
+                            company={unit.franchise?.franchise_name}
                             status={unit.status || "disabled"}
-                            serial={unit.unit_id?.substring(0, 8).toUpperCase() || "N/A"}
-                            owner="System"
+                            serial={unit.unit_id?.split("-")[0]?.toUpperCase() || "N/A"}
+                            owner={unit.franchise?.franchise_name || "System"}
                             {...styles}
                             onStatusChange={handleStatusChange}
                             onArchive={handleArchiveClick}
@@ -186,8 +200,6 @@ export const UnitsRealtime = React.forwardRef(({ initialData, searchQuery: exter
                 onClose={() => setIsUnitModalOpen(false)}
                 initialData={unitToEdit}
                 onSuccess={fetchLatestData}
-                franchises={franchises}
-                units={units}
             />
         </div>
     );

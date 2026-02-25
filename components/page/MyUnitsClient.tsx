@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { updateUnitStatus, archiveUnit } from '@/helper/units'
+import { archiveUnit } from '@/helper/units'
 import { UnitsSearch } from '@/components/search/UnitsSearch'
 import { Button } from '@/components/ui/button'
 import { Plus, RefreshCw, Filter, ChevronDown, Check } from 'lucide-react'
