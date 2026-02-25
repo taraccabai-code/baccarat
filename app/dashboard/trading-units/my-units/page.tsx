@@ -16,6 +16,9 @@ export default async function MyUnitsPage() {
         level: item.level,
         pattern: item.pattern,
         strategy: item.strategy,
+        target_profit: item.target_profit,
+        bet_size: item.bet_size,
+        duration: item.duration,
         archived: false,
         franchise: null
     }));

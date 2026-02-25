@@ -144,3 +144,29 @@ export async function updateBaccaratRow({
   revalidatePath("/dashboard/trade/play-baccarat");
 }
 
+export async function createBaccaratRow(payload: any): Promise<void> {
+  const supabase = await createClient2();
+
+  const insertData = {
+    pc_name: payload.pc_name,
+    status: payload.status,
+    level: payload.level,
+    pattern: payload.pattern,
+    target_profit: payload.target_profit,
+    bet: payload.bet_size,
+    strategy: payload.strategy,
+    duration: payload.duration,
+  };
+
+  const { error } = await supabase
+    .from("bot_monitoring")
+    .insert([insertData]);
+
+  if (error) {
+    console.error("Error creating baccarat row:", error);
+    throw error;
+  }
+
+  revalidatePath("/dashboard/trade/play-baccarat");
+}
+
