@@ -50,11 +50,6 @@ const menuItems: MenuItem[] = [
     icon: <LayoutDashboard className="w-4 h-4" />,
   },
   {
-    title: "Betting Platforms",
-    href: "/dashboard/funders",
-    icon: <Users className="w-4 h-4" />,
-  },
-  {
     title: "Baccarat",
     icon: <Server className="w-4 h-4" />,
     children: [
@@ -75,6 +70,7 @@ const menuItems: MenuItem[] = [
     children: [
       { title: "Account Credentials", href: "/dashboard/trading-accounts/credentials" },
       { title: "User Accounts", href: "/dashboard/trading-accounts/user-accounts" },
+      { title: "Betting Platforms", href: "/dashboard/funders" },
     ],
   },
 ];

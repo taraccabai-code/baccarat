@@ -9,6 +9,7 @@ import { getFranchises } from "@/helper/franchise";
 import { Franchise } from "@/types/franchise";
 import { FranchiseList } from "@/components/list/FranchiseList";
 import { AddFranchiseModal } from "@/components/modal/AddFranchiseModal";
+import { UpdateFranchiseModal } from "@/components/modal/UpdateFranchiseModal";
 
 interface FranchiseModalProps {
     isOpen: boolean;
@@ -20,6 +21,7 @@ export const FranchiseModal = ({ isOpen, onClose }: FranchiseModalProps) => {
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [editingFranchise, setEditingFranchise] = useState<Franchise | null>(null);
 
     const fetchFranchises = async () => {
         setLoading(true);
@@ -84,7 +86,10 @@ export const FranchiseModal = ({ isOpen, onClose }: FranchiseModalProps) => {
                                 Loading...
                             </div>
                         ) : (
-                            <FranchiseList franchises={filteredFranchises} />
+                            <FranchiseList 
+                                franchises={filteredFranchises} 
+                                onEdit={(f) => setEditingFranchise(f)}
+                            />
                         )}
                     </div>
                 </DialogContent>
@@ -94,6 +99,13 @@ export const FranchiseModal = ({ isOpen, onClose }: FranchiseModalProps) => {
                 isOpen={isAddModalOpen}
                 onClose={() => setIsAddModalOpen(false)}
                 onSuccess={fetchFranchises}
+            />
+
+            <UpdateFranchiseModal
+                isOpen={!!editingFranchise}
+                onClose={() => setEditingFranchise(null)}
+                onSuccess={fetchFranchises}
+                franchise={editingFranchise}
             />
         </>
     );

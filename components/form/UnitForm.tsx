@@ -8,6 +8,8 @@ import { getBaccaratData, updateBaccaratRow, createBaccaratRow } from "@/helper/
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
+import { getFranchises } from "@/helper/franchise"
+import { Franchise } from "@/types/franchise"
 
 interface UnitFormProps {
     initialData?: any | null
@@ -20,17 +22,34 @@ const STRATEGIES = ["Standard", "Sweeper", "Burst", "Tank"]
 export function UnitForm({ initialData, onSuccess }: UnitFormProps) {
     const isEditing = !!initialData
     const [isLoading, setIsLoading] = useState(false)
+    const [franchises, setFranchises] = useState<Franchise[]>([])
+    const [selectedFranchise, setSelectedFranchise] = useState<Franchise | null>(null)
 
     const [formData, setFormData] = useState({
         pc_name: initialData?.unit_name || "",
-        status: initialData?.status?.charAt(0).toUpperCase() + initialData?.status?.slice(1) || "Idle",
-        level: initialData?.level || 1,
-        pattern: initialData?.pattern || "",
-        target_profit: initialData?.target_profit || 0,
-        bet_size: initialData?.bet_size || 10,
-        strategy: initialData?.strategy || "Standard",
-        duration: initialData?.duration || 0,
     })
+
+    useEffect(() => {
+        const fetchFranchises = async () => {
+            try {
+                const data = await getFranchises()
+                setFranchises(data || [])
+            } catch (error) {
+                console.error("Error fetching franchises:", error)
+            }
+        }
+        fetchFranchises()
+    }, [])
+
+    const handleFranchiseChange = (franchiseId: string) => {
+        const franchise = franchises.find(f => f.id === franchiseId) || null
+        setSelectedFranchise(franchise)
+
+        if (franchise) {
+            const code = (franchise.franchise_code || franchise.franchise_name || "").toUpperCase()
+            setFormData(prev => ({ ...prev, pc_name: code }))
+        }
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -40,20 +59,27 @@ export function UnitForm({ initialData, onSuccess }: UnitFormProps) {
             if (isEditing && initialData) {
                 await updateBaccaratRow({
                     id: initialData.id,
-                    ...formData,
-                    bet_size: Number(formData.bet_size),
-                    level: Number(formData.level),
-                    target_profit: Number(formData.target_profit),
-                    duration: Number(formData.duration),
-                })
+                    pc_name: formData.pc_name,
+                    // Preserve existing values or use defaults for required fields
+                    level: initialData.level ?? 1,
+                    pattern: initialData.pattern ?? "",
+                    target_profit: initialData.target_profit ?? 0,
+                    bet_size: initialData.bet_size ?? 10,
+                    strategy: initialData.strategy ?? "Standard",
+                    status: initialData.status ?? "Idle",
+                    duration: initialData.duration ?? 0,
+                } as any)
                 toast.success("Unit updated successfully")
             } else {
                 await createBaccaratRow({
-                    ...formData,
-                    bet_size: Number(formData.bet_size),
-                    level: Number(formData.level),
-                    target_profit: Number(formData.target_profit),
-                    duration: Number(formData.duration),
+                    pc_name: formData.pc_name,
+                    status: "Idle",
+                    level: 1,
+                    pattern: "",
+                    target_profit: 0,
+                    bet_size: 10,
+                    strategy: "Standard",
+                    duration: 0,
                 })
                 toast.success("Unit created successfully")
             }
@@ -68,8 +94,19 @@ export function UnitForm({ initialData, onSuccess }: UnitFormProps) {
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2 col-span-2">
+            <div className="flex flex-col gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="franchise">Franchise</Label>
+                    <SearchableSelect
+                        id="franchise"
+                        value={selectedFranchise?.id || ""}
+                        onChange={handleFranchiseChange}
+                        options={franchises.map(f => ({ value: f.id, label: f.franchise_name || "Unnamed" }))}
+                        placeholder="Select franchise"
+                    />
+                </div>
+
+                <div className="space-y-2">
                     <Label htmlFor="pc_name">PC Name / Unit Name</Label>
                     <Input
                         id="pc_name"
@@ -78,83 +115,6 @@ export function UnitForm({ initialData, onSuccess }: UnitFormProps) {
                         onChange={(e) => setFormData({ ...formData, pc_name: e.target.value })}
                         required
                         className="bg-[#050505] border-[#1a1a1a] focus:border-blue-500/50"
-                    />
-                </div>
-
-                <div className="space-y-2">
-                    <Label htmlFor="status">Status</Label>
-                    <SearchableSelect
-                        id="status"
-                        value={formData.status}
-                        onChange={(val) => setFormData({ ...formData, status: val })}
-                        options={BACCARAT_STATUSES.map(s => ({ value: s, label: s }))}
-                        placeholder="Select status"
-                    />
-                </div>
-
-                <div className="space-y-2">
-                    <Label htmlFor="strategy">Strategy</Label>
-                    <SearchableSelect
-                        id="strategy"
-                        value={formData.strategy}
-                        onChange={(val) => setFormData({ ...formData, strategy: val })}
-                        options={STRATEGIES.map(s => ({ value: s, label: s }))}
-                        placeholder="Select strategy"
-                    />
-                </div>
-
-                <div className="space-y-2">
-                    <Label htmlFor="bet_size">Bet Size</Label>
-                    <Input
-                        id="bet_size"
-                        type="number"
-                        value={formData.bet_size}
-                        onChange={(e) => setFormData({ ...formData, bet_size: Number(e.target.value) })}
-                        className="bg-[#050505] border-[#1a1a1a] focus:border-blue-500/50"
-                    />
-                </div>
-
-                <div className="space-y-2">
-                    <Label htmlFor="level">Level</Label>
-                    <Input
-                        id="level"
-                        type="number"
-                        value={formData.level}
-                        onChange={(e) => setFormData({ ...formData, level: Number(e.target.value) })}
-                        className="bg-[#050505] border-[#1a1a1a] focus:border-blue-500/50"
-                    />
-                </div>
-
-                <div className="space-y-2">
-                    <Label htmlFor="target_profit">Target Profit</Label>
-                    <Input
-                        id="target_profit"
-                        type="number"
-                        value={formData.target_profit}
-                        onChange={(e) => setFormData({ ...formData, target_profit: Number(e.target.value) })}
-                        className="bg-[#050505] border-[#1a1a1a] focus:border-blue-500/50"
-                    />
-                </div>
-
-                <div className="space-y-2">
-                    <Label htmlFor="duration">Timer (mins)</Label>
-                    <Input
-                        id="duration"
-                        type="number"
-                        value={formData.duration}
-                        onChange={(e) => setFormData({ ...formData, duration: Number(e.target.value) })}
-                        className="bg-[#050505] border-[#1a1a1a] focus:border-blue-500/50"
-                    />
-                </div>
-
-                <div className="space-y-2 col-span-2">
-                    <Label htmlFor="pattern">Pattern</Label>
-                    <Input
-                        id="pattern"
-                        placeholder="e.g. PPPB"
-                        value={formData.pattern}
-                        onChange={(e) => setFormData({ ...formData, pattern: e.target.value.toUpperCase() })}
-                        className="bg-[#050505] border-[#1a1a1a] focus:border-blue-500/50 uppercase"
                     />
                 </div>
             </div>

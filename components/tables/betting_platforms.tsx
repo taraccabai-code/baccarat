@@ -19,6 +19,7 @@ import { useRouter } from "next/navigation"
 export type BettingPlatform = {
     id: string | number
     name: string
+    code: string
     website: string
     min_bet: number | string
     raw?: any // Original record for editing
@@ -67,6 +68,9 @@ export const BettingPlatformTable = ({ data, loading, onEdit }: BettingPlatformT
                             Platform Name
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">
+                            Platform Code
+                        </TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">
                             Platform Website
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">
@@ -80,7 +84,7 @@ export const BettingPlatformTable = ({ data, loading, onEdit }: BettingPlatformT
                 <TableBody>
                     {loading && (
                         <TableRow className="border-gray-800">
-                            <TableCell colSpan={4} className="text-center text-gray-500 h-32 italic">
+                            <TableCell colSpan={5} className="text-center text-gray-500 h-32 italic">
                                 Loading platforms...
                             </TableCell>
                         </TableRow>
@@ -88,7 +92,7 @@ export const BettingPlatformTable = ({ data, loading, onEdit }: BettingPlatformT
 
                     {!loading && data.length === 0 && (
                         <TableRow className="border-gray-800">
-                            <TableCell colSpan={4} className="text-center text-gray-500 h-32 italic">
+                            <TableCell colSpan={5} className="text-center text-gray-500 h-32 italic">
                                 No platforms found.
                             </TableCell>
                         </TableRow>
@@ -98,6 +102,9 @@ export const BettingPlatformTable = ({ data, loading, onEdit }: BettingPlatformT
                         <TableRow key={row.id} className="border-gray-800 hover:bg-[#111] transition-colors">
                             <TableCell className="text-center text-gray-200 text-xs py-4">
                                 {row.name}
+                            </TableCell>
+                            <TableCell className="text-center text-gray-200 text-xs py-4">
+                                {row.code}
                             </TableCell>
                             <TableCell className="text-center text-gray-200 text-xs py-4">
                                 <a

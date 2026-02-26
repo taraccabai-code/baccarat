@@ -7,6 +7,7 @@ export type PlatformWebsiteRecord = {
     platform_name: string | null;
     platform_website: string | null;
     min_bet: number | string | null;
+    platform_code: string | null;
 };
 
 /**
@@ -17,7 +18,7 @@ export async function getPlatformWebsites(): Promise<PlatformWebsiteRecord[]> {
 
     const { data, error } = await supabase
         .from("platform_website")
-        .select("id, platform_name, platform_website, min_bet")
+        .select("id, platform_name, platform_website, min_bet, platform_code")
         .order("id", { ascending: true });
 
     if (error) {

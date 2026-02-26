@@ -6,14 +6,19 @@ export async function getFranchises() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("franchise")
-    .select("id, created_at, franchise_name, franchise_code, investor_name")
-    .order("created_at", { ascending: false });
+    .select("franchise_name, franchise_code, investor_name, description")
+    .order("franchise_name", { ascending: true });
 
   if (error) {
     console.error("Error fetching franchises:", error);
     return [];
   }
-  return data;
+  
+  // Map franchise_name to id to maintain compatibility with existing components
+  return (data || []).map(f => ({
+      ...f,
+      id: f.franchise_name
+  }));
 }
 
 export async function getFranchiseById(id: string) {
@@ -21,14 +26,14 @@ export async function getFranchiseById(id: string) {
   const { data, error } = await supabase
     .from("franchise")
     .select("*")
-    .eq("id", id)
+    .eq("franchise_name", id)
     .single();
 
   if (error) {
     console.error("Error fetching franchise:", error);
     return null;
   }
-  return data;
+  return { ...data, id: data.franchise_name };
 }
 
 export async function createFranchise(formData: any) {
@@ -49,7 +54,7 @@ export async function updateFranchise(id: string, formData: any) {
   const { data, error } = await supabase
     .from("franchise")
     .update(formData)
-    .eq("id", id)
+    .eq("franchise_name", id)
     .select();
 
   if (error) {
@@ -60,7 +65,7 @@ export async function updateFranchise(id: string, formData: any) {
 
 export async function deleteFranchise(id: string) {
   const supabase = await createClient();
-  const { error } = await supabase.from("franchise").delete().eq("id", id);
+  const { error } = await supabase.from("franchise").delete().eq("franchise_name", id);
 
   if (error) {
     throw new Error(error.message);

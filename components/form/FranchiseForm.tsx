@@ -19,9 +19,11 @@ const franchiseSchema = z.object({
     franchise_name: z.string().min(1, "Franchise name is required"),
     franchise_code: z.string().min(1, "Franchise code is required"),
     investor_name: z.string().min(1, "Investor name is required"),
+    description: z.string().optional(),
 })
 
 type FranchiseFormValues = z.infer<typeof franchiseSchema>
+
 
 interface FranchiseFormProps {
     initialData?: Franchise | null
@@ -43,36 +45,43 @@ export const FranchiseForm = ({ initialData }: FranchiseFormProps) => {
             franchise_name: initialData?.franchise_name || "",
             franchise_code: initialData?.franchise_code || "",
             investor_name: initialData?.investor_name || "",
+            description: initialData?.description || "",
         },
     })
 
     const franchise_name = watch("franchise_name")
 
+    React.useEffect(() => {
+        if (franchise_name && !initialData) {
+            const cleanName = franchise_name.replace(/\s+/g, '');
+            const code = cleanName.substring(0, 3).toUpperCase();
+            setValue("franchise_code", code);
+        }
+    }, [franchise_name, setValue, initialData]);
+
     const generateCode = () => {
         if (franchise_name) {
-            const prefix = franchise_name.substring(0, 3).toUpperCase();
-            const random = Math.floor(100 + Math.random() * 900);
-            setValue("franchise_code", `${prefix}-${random}`);
+            const cleanName = franchise_name.replace(/\s+/g, '');
+            const code = cleanName.substring(0, 3).toUpperCase();
+            setValue("franchise_code", code);
         }
     }
+
 
     const onSubmit = async (data: FranchiseFormValues) => {
         setIsPending(true)
         try {
+            const payload: any = {
+                franchise_name: data.franchise_name,
+                franchise_code: data.franchise_code,
+                investor_name: data.investor_name,
+                description: data.description || null,
+            }
+
             if (initialData?.id) {
-                const payload: UpdateFranchise = {
-                    franchise_name: data.franchise_name,
-                    franchise_code: data.franchise_code,
-                    investor_name: data.investor_name,
-                }
                 await updateFranchise(initialData.id, payload)
                 toast.success("Franchise updated successfully")
             } else {
-                const payload: CreateFranchise = {
-                    franchise_name: data.franchise_name,
-                    franchise_code: data.franchise_code,
-                    investor_name: data.investor_name,
-                }
                 await createFranchise(payload)
                 toast.success("Franchise created successfully")
             }
@@ -146,6 +155,19 @@ export const FranchiseForm = ({ initialData }: FranchiseFormProps) => {
                 {errors.investor_name && <p className="text-xs text-red-500">{errors.investor_name.message}</p>}
             </div>
 
+            <div className="space-y-2">
+                <Label htmlFor="description" className="text-white">
+                    Description (Optional)
+                </Label>
+                <Textarea
+                    id="description"
+                    {...register("description")}
+                    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500 min-h-[100px]"
+                    placeholder="Enter franchise description"
+                />
+                {errors.description && <p className="text-xs text-red-500">{errors.description.message}</p>}
+            </div>
+
             <div className="flex justify-end gap-3 pt-6 border-t border-gray-800">
                 <Button
                     type="button"
@@ -168,6 +190,7 @@ export const FranchiseForm = ({ initialData }: FranchiseFormProps) => {
                     {initialData ? "Update Franchise" : "Add Franchise"}
                 </Button>
             </div>
+
         </form>
     )
 }

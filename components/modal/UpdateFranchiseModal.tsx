@@ -1,22 +1,23 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { createFranchise } from "@/helper/franchise";
+import { updateFranchise } from "@/helper/franchise";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { Franchise } from "@/types/franchise";
 
-interface AddFranchiseModalProps {
+interface UpdateFranchiseModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
+    franchise: Franchise | null;
 }
 
-export const AddFranchiseModal = ({ isOpen, onClose, onSuccess }: AddFranchiseModalProps) => {
+export const UpdateFranchiseModal = ({ isOpen, onClose, onSuccess, franchise }: UpdateFranchiseModalProps) => {
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         franchise_name: "",
@@ -24,31 +25,32 @@ export const AddFranchiseModal = ({ isOpen, onClose, onSuccess }: AddFranchiseMo
         investor_name: "",
     });
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setFormData((prev) => {
-            const newData = { ...prev, [name]: value };
-            
-            // Auto-generate code if name is being changed
-            if (name === "franchise_name") {
-                const cleanName = value.replace(/\s+/g, '');
-                newData.franchise_code = cleanName.substring(0, 3).toUpperCase();
-            }
-            
-            return newData;
-        });
-    };
-
-    const generateCode = () => {
-        if (formData.franchise_name) {
-            const cleanName = formData.franchise_name.replace(/\s+/g, '');
-            const code = cleanName.substring(0, 3).toUpperCase();
-            setFormData(prev => ({ ...prev, franchise_code: code }));
+    useEffect(() => {
+        if (franchise) {
+            setFormData({
+                franchise_name: franchise.franchise_name || "",
+                franchise_code: franchise.franchise_code || "",
+                investor_name: franchise.investor_name || "",
+            });
         }
-    }
+    }, [franchise]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!franchise) return;
+        
+        // Use either id or franchise_name as the identifier
+        const identifier = (franchise as any).id || franchise.franchise_name;
+        if (!identifier) {
+            toast.error("Cannot identify franchise to update");
+            return;
+        }
+
         if (!formData.franchise_name || !formData.franchise_code || !formData.investor_name) {
             toast.error("Please fill in all required fields");
             return;
@@ -56,18 +58,13 @@ export const AddFranchiseModal = ({ isOpen, onClose, onSuccess }: AddFranchiseMo
 
         setLoading(true);
         try {
-            await createFranchise(formData);
-            toast.success("Franchise created successfully");
-            setFormData({
-                franchise_name: "",
-                franchise_code: "",
-                investor_name: "",
-            });
+            await updateFranchise(identifier, formData);
+            toast.success("Franchise updated successfully");
             onSuccess();
             onClose();
         } catch (error: any) {
-            console.error("Error creating franchise:", error);
-            toast.error(error.message || "Failed to create franchise");
+            console.error("Error updating franchise:", error);
+            toast.error(error.message || "Failed to update franchise");
         } finally {
             setLoading(false);
         }
@@ -77,7 +74,7 @@ export const AddFranchiseModal = ({ isOpen, onClose, onSuccess }: AddFranchiseMo
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="bg-[#0A0A0A] border-gray-800 text-white sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Add New Franchise</DialogTitle>
+                    <DialogTitle>Update Franchise</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
@@ -93,16 +90,7 @@ export const AddFranchiseModal = ({ isOpen, onClose, onSuccess }: AddFranchiseMo
                     </div>
 
                     <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                            <Label htmlFor="franchise_code">Franchise Code</Label>
-                            <button
-                                type="button"
-                                onClick={generateCode}
-                                className="text-xs text-blue-500 hover:text-blue-400"
-                            >
-                                Generate
-                            </button>
-                        </div>
+                        <Label htmlFor="franchise_code">Franchise Code</Label>
                         <Input
                             id="franchise_code"
                             name="franchise_code"
@@ -125,18 +113,6 @@ export const AddFranchiseModal = ({ isOpen, onClose, onSuccess }: AddFranchiseMo
                         />
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="description">Description (Optional)</Label>
-                        <Textarea
-                            id="description"
-                            name="description"
-                            placeholder="e.g. Key regional partner"
-                            value={(formData as any).description || ""}
-                            onChange={handleChange}
-                            className="bg-[#111111] border-gray-800 focus:border-blue-600 min-h-[80px]"
-                        />
-                    </div>
-
                     <DialogFooter className="pt-4">
                         <Button
                             type="button"
@@ -155,10 +131,10 @@ export const AddFranchiseModal = ({ isOpen, onClose, onSuccess }: AddFranchiseMo
                             {loading ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Creating...
+                                    Updating...
                                 </>
                             ) : (
-                                "Create Franchise"
+                                "Update Franchise"
                             )}
                         </Button>
                     </DialogFooter>

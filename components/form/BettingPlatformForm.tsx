@@ -16,6 +16,7 @@ const platformSchema = z.object({
     platform_name: z.string().min(1, "Platform name is required"),
     platform_website: z.string().min(1, "Platform website is required"),
     min_bet: z.string().min(1, "Minimum bet is required"),
+    platform_code: z.string().min(1, "Platform code is required"),
 })
 
 type PlatformFormValues = z.infer<typeof platformSchema>
@@ -32,6 +33,8 @@ export const BettingPlatformForm = ({ initialData, onSuccess, onCancel }: Bettin
     const {
         register,
         handleSubmit,
+        watch,
+        setValue,
         formState: { errors },
     } = useForm<PlatformFormValues>({
         resolver: zodResolver(platformSchema),
@@ -39,8 +42,21 @@ export const BettingPlatformForm = ({ initialData, onSuccess, onCancel }: Bettin
             platform_name: initialData?.platform_name || "",
             platform_website: initialData?.platform_website || "",
             min_bet: String(initialData?.min_bet || ""),
+            platform_code: initialData?.platform_code || "",
         },
     })
+
+    const platformName = watch("platform_name")
+
+    React.useEffect(() => {
+        if (!initialData) {
+            const code = platformName
+                .replace(/\s+/g, '')
+                .substring(0, 3)
+                .toUpperCase()
+            setValue("platform_code", code)
+        }
+    }, [platformName, setValue, initialData])
 
     const onSubmit = async (data: PlatformFormValues) => {
         setIsPending(true)
@@ -49,6 +65,7 @@ export const BettingPlatformForm = ({ initialData, onSuccess, onCancel }: Bettin
                 platform_name: data.platform_name,
                 platform_website: data.platform_website,
                 min_bet: data.min_bet,
+                platform_code: data.platform_code,
             }
 
             if (initialData?.id) {
@@ -90,6 +107,19 @@ export const BettingPlatformForm = ({ initialData, onSuccess, onCancel }: Bettin
                     placeholder="Enter platform name"
                 />
                 {errors.platform_name && <p className="text-xs text-red-500">{errors.platform_name.message}</p>}
+            </div>
+
+            <div className="space-y-2">
+                <Label htmlFor="platform_code" className="text-white">
+                    Platform Code <span className="text-red-400">*</span>
+                </Label>
+                <Input
+                    id="platform_code"
+                    {...register("platform_code")}
+                    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500"
+                    placeholder="Auto-generated code"
+                />
+                {errors.platform_code && <p className="text-xs text-red-500">{errors.platform_code.message}</p>}
             </div>
 
             <div className="space-y-2">

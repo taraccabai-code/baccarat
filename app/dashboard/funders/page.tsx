@@ -61,6 +61,7 @@ const FundersPage = () => {
     const mappedPlatforms = filteredPlatforms.map(platform => ({
         id: platform.id,
         name: platform.platform_name || "Unknown",
+        code: platform.platform_code || "N/A",
         website: platform.platform_website || "N/A",
         min_bet: platform.min_bet || "0",
         raw: platform // Pass the full record for editing

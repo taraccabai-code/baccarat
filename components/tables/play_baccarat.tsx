@@ -527,16 +527,15 @@ export const PlayBaccaratTable = ({
             <Table>
                 <TableHeader className="bg-[#0a0a0a]">
                     <TableRow className="border-gray-800 hover:bg-transparent">
-                        <TableHead className="w-12 text-center px-4">
+                        <TableHead className="w-12 text-right px-4">
                             <Checkbox
                                 checked={isAllSelected || (isSomeSelected ? "indeterminate" : false)}
                                 onCheckedChange={(checked) => toggleSelectAll(!!checked)}
                                 aria-label="Select all rows"
                             />
                         </TableHead>
-                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
-                            <div className="flex items-center justify-center gap-1 select-none">
-                                <span>Units</span>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-right px-4">
+                            <div className="flex items-center justify-end gap-1 select-none">
                                 <div
                                     className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
                                     onClick={() => handleSort('units')}
@@ -547,16 +546,16 @@ export const PlayBaccaratTable = ({
                                         <ArrowUpDown className="h-3 w-3 text-gray-500" />
                                     )}
                                 </div>
+                                <span>Units</span>
                             </div>
                         </TableHead>
-                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
-                            <div className="flex items-center justify-center gap-1 select-none">
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-right px-4">
+                            <div className="flex items-center justify-end gap-1 select-none">
                                 <span>Franchise</span>
                             </div>
                         </TableHead>
-                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
-                            <div className="flex items-center justify-center gap-1 select-none">
-                                <span>Status</span>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-right px-4">
+                            <div className="flex items-center justify-end gap-1 select-none">
                                 <div
                                     className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
                                     onClick={() => handleSort('status')}
@@ -567,11 +566,11 @@ export const PlayBaccaratTable = ({
                                         <ArrowUpDown className="h-3 w-3 text-gray-500" />
                                     )}
                                 </div>
+                                <span>Status</span>
                             </div>
                         </TableHead>
-                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
-                            <div className="flex items-center justify-center gap-1 select-none">
-                                <span>User Bal</span>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-right px-4">
+                            <div className="flex items-center justify-end gap-1 select-none">
                                 <div
                                     className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
                                     onClick={() => handleSort('user_balance')}
@@ -582,11 +581,11 @@ export const PlayBaccaratTable = ({
                                         <ArrowUpDown className="h-3 w-3 text-gray-500" />
                                     )}
                                 </div>
+                                <span>Bal</span>
                             </div>
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
                             <div className="flex items-center justify-center gap-1 select-none">
-                                <span>Bet Size</span>
                                 <div
                                     className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
                                     onClick={() => handleSort('bet_size')}
@@ -597,11 +596,11 @@ export const PlayBaccaratTable = ({
                                         <ArrowUpDown className="h-3 w-3 text-gray-500" />
                                     )}
                                 </div>
+                                <span>Bet Size</span>
                             </div>
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
                             <div className="flex items-center justify-center gap-1 select-none">
-                                <span>Level</span>
                                 <div
                                     className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
                                     onClick={() => handleSort('level')}
@@ -612,11 +611,11 @@ export const PlayBaccaratTable = ({
                                         <ArrowUpDown className="h-3 w-3 text-gray-500" />
                                     )}
                                 </div>
+                                <span>Level</span>
                             </div>
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
                             <div className="flex items-center justify-center gap-1 select-none">
-                                <span>Strategy</span>
                                 <div
                                     className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
                                     onClick={() => handleSort('strategy')}
@@ -627,11 +626,11 @@ export const PlayBaccaratTable = ({
                                         <ArrowUpDown className="h-3 w-3 text-gray-500" />
                                     )}
                                 </div>
+                                <span>Strategy</span>
                             </div>
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
                             <div className="flex items-center justify-center gap-1 select-none">
-                                <span>Pattern</span>
                                 <div
                                     className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
                                     onClick={() => handleSort('pattern')}
@@ -642,11 +641,11 @@ export const PlayBaccaratTable = ({
                                         <ArrowUpDown className="h-3 w-3 text-gray-500" />
                                     )}
                                 </div>
+                                <span>Pattern</span>
                             </div>
                         </TableHead>
-                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
-                            <div className="flex items-center justify-center gap-1 select-none">
-                                <span>TP (%)</span>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-right px-4">
+                            <div className="flex items-center justify-end gap-1 select-none">
                                 <div
                                     className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
                                     onClick={() => handleSort('target_profit')}
@@ -657,11 +656,11 @@ export const PlayBaccaratTable = ({
                                         <ArrowUpDown className="h-3 w-3 text-gray-500" />
                                     )}
                                 </div>
+                                <span>TP (%)</span>
                             </div>
                         </TableHead>
-                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
-                            <div className="flex items-center justify-center gap-1 select-none">
-                                <span>Timer (mins)</span>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-right px-4">
+                            <div className="flex items-center justify-end gap-1 select-none">
                                 <div
                                     className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
                                     onClick={() => handleSort('duration')}
@@ -672,12 +671,13 @@ export const PlayBaccaratTable = ({
                                         <ArrowUpDown className="h-3 w-3 text-gray-500" />
                                     )}
                                 </div>
+                                <span>Timer</span>
                             </div>
                         </TableHead>
-                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-right px-4">
                             Actions
                         </TableHead>
-                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-right px-4">
                             {/* Empty header for confirm/cancel icons */}
                         </TableHead>
                     </TableRow>
@@ -709,21 +709,21 @@ export const PlayBaccaratTable = ({
 
                     {!loading && !error && displayRows.length > 0 && displayRows.map((row) => (
                         <TableRow key={row.id} className="border-gray-800">
-                            <TableCell className="w-12 text-center px-4">
+                            <TableCell className="w-12 text-right px-4">
                                 <Checkbox
                                     checked={selectedRows.has(row.id)}
                                     onCheckedChange={(checked) => toggleSelectRow(row.id, !!checked)}
                                     aria-label={`Select row ${row.units || row.id}`}
                                 />
                             </TableCell>
-                            <TableCell className="text-center text-gray-200 text-xs">
+                            <TableCell className="text-right text-gray-200 text-xs px-4">
                                 {row.units ?? ""}
                             </TableCell>
-                            <TableCell className="text-center text-gray-200 text-xs">
+                            <TableCell className="text-right text-gray-200 text-xs px-4">
                                 {/* Franchise column - empty for now */}
                             </TableCell>
-                            <TableCell className="text-center text-gray-200 text-xs">
-                                <div className="flex items-center justify-center gap-2">
+                            <TableCell className="text-right text-gray-200 text-xs px-4">
+                                <div className="flex items-center justify-end gap-2">
                                     <span
                                         className="rounded-full shrink-0"
                                         style={{
@@ -736,10 +736,10 @@ export const PlayBaccaratTable = ({
                                     <span>{row.status ?? ""}</span>
                                 </div>
                             </TableCell>
-                            <TableCell className="text-center text-gray-200 text-xs">
+                            <TableCell className="text-right text-gray-200 text-xs px-4">
                                 {row.user_balance ?? ""}
                             </TableCell>
-                            <TableCell className="text-center text-gray-200 text-xs">
+                            <TableCell className="text-center text-gray-200 text-xs px-4">
                                 <Select
                                     value={String(getBetSize(row) ?? "")}
                                     onValueChange={(value) => handleBetSizeChange(row.id, Number(value))}
@@ -755,7 +755,7 @@ export const PlayBaccaratTable = ({
                                     </SelectContent>
                                 </Select>
                             </TableCell>
-                            <TableCell className="text-center text-gray-200 text-xs">
+                            <TableCell className="text-center text-gray-200 text-xs px-4">
                                 <Select
                                     value={getLevel(row) === null ? "-" : String(getLevel(row))}
                                     onValueChange={(value) => setLevel(row.id, value === "-" ? null : Number(value), getBetSize(row), getStrategy(row))}
@@ -791,7 +791,7 @@ export const PlayBaccaratTable = ({
                                     </SelectContent>
                                 </Select>
                             </TableCell>
-                            <TableCell className="text-center text-gray-200 text-xs">
+                            <TableCell className="text-center text-gray-200 text-xs px-4">
                                 <Select
                                     value={getStrategy(row)}
                                     onValueChange={(value) => handleStrategyChange(row.id, value)}
@@ -817,7 +817,7 @@ export const PlayBaccaratTable = ({
                                     </SelectContent>
                                 </Select>
                             </TableCell>
-                            <TableCell className="text-center text-gray-200 text-xs">
+                            <TableCell className="text-center text-gray-200 text-xs px-4">
                                 <div className="relative w-28 mx-auto">
                                     <Input
                                         value={getPattern(row)}
@@ -845,8 +845,8 @@ export const PlayBaccaratTable = ({
                                     </DropdownMenu>
                                 </div>
                             </TableCell>
-                            <TableCell className="text-center text-gray-200 text-xs">
-                                <div className="flex items-center justify-center gap-1 mx-auto w-fit">
+                            <TableCell className="text-right text-gray-200 text-xs px-4">
+                                <div className="flex items-center justify-end gap-1 ml-auto mr-0 w-fit">
                                     <input
                                         type="text"
                                         inputMode="numeric"
@@ -866,8 +866,8 @@ export const PlayBaccaratTable = ({
                                     <span className="text-gray-400">%</span>
                                 </div>
                             </TableCell>
-                            <TableCell className="text-center text-gray-200 text-xs">
-                                <div className="flex items-center justify-center gap-1 mx-auto w-fit">
+                            <TableCell className="text-right text-gray-200 text-xs px-4">
+                                <div className="flex items-center justify-end gap-1 ml-auto mr-0 w-fit">
                                     <input
                                         type="text"
                                         inputMode="numeric"
@@ -887,8 +887,8 @@ export const PlayBaccaratTable = ({
                                     <span className="text-gray-400">mins</span>
                                 </div>
                             </TableCell>
-                            <TableCell className="text-center">
-                                <div className="flex items-center justify-center gap-2">
+                            <TableCell className="text-right px-4">
+                                <div className="flex items-center justify-end gap-2">
                                     <Button
                                         size="sm"
                                         className="text-white text-xs h-5 px-3 rounded-md border-0"
@@ -901,16 +901,16 @@ export const PlayBaccaratTable = ({
                                     <Button
                                         size="sm"
                                         className="text-white text-xs h-5 px-3 rounded-md border-0"
-                                        style={{ backgroundColor: row.status === "Stopped" ? "#4ADE80" : "#868686" }}
+                                        style={{ backgroundColor: row.status !== "Running" ? "#4ADE80" : "#868686" }}
                                         onClick={() => handleStatusChange(row, "Running")}
-                                        disabled={savingRowId === String(row.id) || row.status === "Running" || row.status === "Burned"}
+                                        disabled={savingRowId === String(row.id) || row.status === "Running"}
                                     >
                                         Run
                                     </Button>
                                 </div>
                             </TableCell>
-                            <TableCell className="text-center">
-                                <div className="flex items-center justify-center gap-1">
+                            <TableCell className="text-right px-4">
+                                <div className="flex items-center justify-end gap-1">
                                     <Button
                                         size="icon"
                                         variant="ghost"
