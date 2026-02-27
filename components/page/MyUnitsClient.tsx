@@ -61,7 +61,8 @@ export default function MyUnitsClient({ initialUnits }: MyUnitsClientProps) {
                 bet_size: item.bet_size,
                 duration: item.duration,
                 archived: false,
-                franchise: null // We don't have franchise info from baccarat helper yet
+                assigned_user: item.assigned_user || null,
+                franchise: null
             }));
             setUnits(mappedUnits);
             toast.success("Units refreshed from baccarat monitor");

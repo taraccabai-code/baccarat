@@ -38,6 +38,7 @@ export interface UnitCardProps {
     credentialName?: string;
     credentialUsername?: string;
     credentialPassword?: string;
+    assignedUserName?: string;
     balance?: number | string;
     level?: number;
     pattern?: string;
@@ -66,6 +67,7 @@ export function UnitCard({
     level,
     pattern,
     strategy,
+    assignedUserName,
     onStatusChange,
     onArchive,
     onEdit
@@ -131,84 +133,12 @@ export function UnitCard({
                             {typeof balance === 'number' ? balance.toLocaleString() : balance}
                         </div>
                     )}
-                    <div className="min-h-[16px]">
-                        {company && (
-                            <div className="text-xs mt-1 text-gray-400">{company}</div>
-                        )}
-                    </div>
+
                 </div>
-
-                {/* Serial */}
-                <div className="text-center mb-4">
-                    <div className="text-sm font-mono text-gray-400">{serial}</div>
-                </div>
-
-                {/* Owner */}
-                <div className="text-center mb-4 min-h-[24px]">
-                    <div className="text-sm font-medium text-gray-300">{owner}</div>
-                </div>
-
-                <div className="border-t border-gray-700 mb-4" />
-
-                {/* User & Password */}
-                <div className="mb-4 min-h-[80px] flex flex-col justify-center gap-2">
-                    {credentialName ? (
-                        <>
-                            <div className="flex items-center gap-2 text-sm text-gray-300">
-                                <User className="h-3.5 w-3.5 text-gray-500 shrink-0" />
-                                <span className="truncate font-medium">{credentialName}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm">
-                                <span className="font-mono tracking-widest text-gray-400 text-xs flex-1 truncate">
-                                    {showPassword
-                                        ? (credentialPassword || "—")
-                                        : "••••••••"}
-                                </span>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(p => !p)}
-                                    className="text-gray-500 hover:text-white transition-colors shrink-0"
-                                    title={showPassword ? "Hide password" : "Show password"}
-                                >
-                                    {showPassword
-                                        ? <EyeOff className="h-3.5 w-3.5" />
-                                        : <Eye className="h-3.5 w-3.5" />}
-                                </button>
-                            </div>
-                        </>
-                    ) : (
-                        <div className="text-xs text-gray-600 text-center">No user assigned</div>
-                    )}
-                </div>
-
-                {/* Live Stats Section */}
-                {(level !== undefined || pattern || strategy) && (
-                    <div className="grid grid-cols-2 gap-2 mb-4 p-2 rounded bg-gray-900/50 border border-gray-700/50">
-                        {level !== undefined && (
-                            <div className="flex flex-col">
-                                <span className="text-[10px] text-gray-500 uppercase font-bold">Level</span>
-                                <span className="text-sm font-mono text-blue-400">{level}</span>
-                            </div>
-                        )}
-                        {strategy && (
-                            <div className="flex flex-col">
-                                <span className="text-[10px] text-gray-500 uppercase font-bold">Strategy</span>
-                                <span className="text-sm truncate text-gray-300" title={strategy}>{strategy}</span>
-                            </div>
-                        )}
-                        {pattern && (
-                            <div className="flex flex-col col-span-2 border-t border-gray-800 pt-1 mt-1">
-                                <span className="text-[10px] text-gray-500 uppercase font-bold">Pattern</span>
-                                <span className="text-sm font-mono text-amber-500 truncate" title={pattern}>{pattern}</span>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                <div className="border-t border-gray-700 mb-4" />
+            
 
                 {/* Actions */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mt-[100px]">
                     <div className="flex items-center gap-2 px-2 py-1">
                         <div 
                             className="w-2 h-2 rounded-full shrink-0" 

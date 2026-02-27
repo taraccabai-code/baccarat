@@ -41,6 +41,11 @@ export type BaccaratRow = {
     duration?: number | string | null
     strategy?: string | null
     franchise?: string | null
+    assigned_user?: {
+        first_name: string | null
+        middle_name: string | null
+        last_name: string | null
+    } | null
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -551,7 +556,7 @@ export const PlayBaccaratTable = ({
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-right px-4">
                             <div className="flex items-center justify-end gap-1 select-none">
-                                <span>Franchise</span>
+                                <span>User</span>
                             </div>
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-right px-4">
@@ -720,7 +725,9 @@ export const PlayBaccaratTable = ({
                                 {row.units ?? ""}
                             </TableCell>
                             <TableCell className="text-right text-gray-200 text-xs px-4">
-                                {/* Franchise column - empty for now */}
+                                {row.assigned_user 
+                                    ? `${row.assigned_user.first_name || ""} ${row.assigned_user.middle_name || ""} ${row.assigned_user.last_name || ""}`.trim() 
+                                    : "-"}
                             </TableCell>
                             <TableCell className="text-right text-gray-200 text-xs px-4">
                                 <div className="flex items-center justify-end gap-2">

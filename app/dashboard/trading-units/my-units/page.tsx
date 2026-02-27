@@ -20,6 +20,7 @@ export default async function MyUnitsPage() {
         bet_size: item.bet_size,
         duration: item.duration,
         archived: false,
+        assigned_user: item.assigned_user || null,
         franchise: null
     }));
 

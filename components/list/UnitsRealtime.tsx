@@ -166,12 +166,25 @@ export const UnitsRealtime = React.forwardRef(({ initialData, searchQuery: exter
                         <UnitCard
                             key={unit.id}
                             id={unit.id}
-                            code={unit.unit_name}
+                            code={unit.pc_name || unit.unit_name}
                             shortName={unit.franchise?.franchise_code || "UN"}
-                            company={unit.franchise?.franchise_name}
+                            company={
+                                unit.assigned_user
+                                    ? `${unit.assigned_user.first_name || ""} ${unit.assigned_user.middle_name || ""} ${unit.assigned_user.last_name || ""}`.replace(/\s+/g, " ").trim()
+                                    : (unit.franchise?.franchise_name || undefined)
+                            }
                             status={unit.status || "disabled"}
                             serial={unit.unit_id?.split("-")[0]?.toUpperCase() || "N/A"}
-                            owner={unit.franchise?.franchise_name || "System"}
+                            owner={
+                                unit.assigned_user 
+                                    ? `${unit.assigned_user.first_name || ""} ${unit.assigned_user.middle_name || ""} ${unit.assigned_user.last_name || ""}`.replace(/\s+/g, " ").trim()
+                                    : (unit.franchise?.franchise_name || "System")
+                            }
+                            assignedUserName={
+                                unit.assigned_user 
+                                    ? `${unit.assigned_user.first_name || ""} ${unit.assigned_user.middle_name || ""} ${unit.assigned_user.last_name || ""}`.replace(/\s+/g, " ").trim()
+                                    : undefined
+                            }
                             {...styles}
                             onStatusChange={handleStatusChange}
                             onArchive={handleArchiveClick}

@@ -15,6 +15,11 @@ type BaccaratRecord = {
   bet_size?: number | string | null;
   strategy?: string | null;
   duration?: number | string | null;
+  assigned_user?: {
+    first_name: string | null;
+    middle_name: string | null;
+    last_name: string | null;
+  } | null;
 };
 
 type BotMonitoringRow = {
@@ -28,6 +33,15 @@ type BotMonitoringRow = {
   bet: number | string | null;
   strategy: string | null;
   duration: number | string | null;
+  assigned_user?: {
+    first_name: string | null;
+    middle_name: string | null;
+    last_name: string | null;
+  } | {
+    first_name: string | null;
+    middle_name: string | null;
+    last_name: string | null;
+  }[] | null;
 };
 
 /**
@@ -41,7 +55,7 @@ export async function getBaccaratData(): Promise<BaccaratRecord[]> {
     // Assumes a table named `bot_monitoring` with columns:
     // id, pc_name, status, balance, level, pattern, target_profit, bet
     .from("bot_monitoring")
-    .select("id, pc_name, status, balance, level, pattern, target_profit, bet, strategy, duration")
+    .select("id, pc_name, status, balance, level, pattern, target_profit, bet, strategy, duration, assigned_user:user_id(first_name, middle_name, last_name)")
     .order("id", { ascending: true });
 
   if (error) {
@@ -73,6 +87,7 @@ export async function getBaccaratData(): Promise<BaccaratRecord[]> {
     target_profit: row.target_profit ?? null,
     strategy: row.strategy ?? null,
     duration: row.duration ?? null,
+    assigned_user: Array.isArray(row.assigned_user) ? row.assigned_user[0] : row.assigned_user ?? null,
     actions: null,
   }));
 
@@ -89,6 +104,7 @@ type UpdateBaccaratPayload = {
   status?: string | null;
   command?: boolean;
   duration?: number | null;
+  user_id?: string | null;
 };
 
 export async function updateBaccaratRow({
@@ -101,6 +117,7 @@ export async function updateBaccaratRow({
   status,
   command,
   duration,
+  user_id,
 }: UpdateBaccaratPayload): Promise<void> {
   const supabase = await createClient2();
 
@@ -130,6 +147,10 @@ export async function updateBaccaratRow({
     updateData.duration = duration;
   }
 
+  if (user_id !== undefined) {
+    updateData.user_id = user_id;
+  }
+
 
   const { error } = await supabase
     .from("bot_monitoring")
@@ -156,6 +177,7 @@ export async function createBaccaratRow(payload: any): Promise<void> {
     bet: payload.bet_size,
     strategy: payload.strategy,
     duration: payload.duration,
+    user_id: payload.user_id,
   };
 
   const { error } = await supabase

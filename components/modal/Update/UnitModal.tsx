@@ -9,9 +9,6 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { UnitForm } from "../../form/UnitForm"
-import { Unit } from "@/types/units"
-import { Franchise } from "@/types/franchise"
-import Link from "next/link"
 
 interface UnitModalProps {
     isOpen: boolean

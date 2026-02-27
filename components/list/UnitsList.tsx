@@ -19,6 +19,11 @@ interface UnitWithCounts extends Partial<Unit> {
         username: string | null;
         password: string | null;
     } | null;
+    assigned_user?: {
+        first_name: string | null;
+        middle_name: string | null;
+        last_name: string | null;
+    } | null;
     target_profit?: number | null;
     bet_size?: number | string | null;
 }
@@ -66,10 +71,18 @@ const UnitsList = ({ units, onEdit, onArchive, onStatusChange }: UnitsListProps)
                     id={unit.id}
                     code={unit.unit_name}
                     shortName={unit.franchise?.franchise_code || "UN"}
-                    company={unit.franchise?.franchise_name || undefined}
+                    company={
+                        unit.assigned_user
+                            ? `${unit.assigned_user.first_name || ""} ${unit.assigned_user.middle_name || ""} ${unit.assigned_user.last_name || ""}`.replace(/\s+/g, " ").trim()
+                            : (unit.franchise?.franchise_name || undefined)
+                    }
                     status={unit.status || "disabled"}
                     serial={unit.unit_id?.split("-")[0]?.toUpperCase() || "N/A"}
-                    owner={unit.franchise?.franchise_name || "Unknown"}
+                    owner={
+                        unit.assigned_user
+                            ? `${unit.assigned_user.first_name || ""} ${unit.assigned_user.middle_name || ""} ${unit.assigned_user.last_name || ""}`.replace(/\s+/g, " ").trim()
+                            : (unit.franchise?.franchise_name || "No user assigned")
+                    }
                     accentColor={(unit.franchise as any)?.color || "border-gray-600"}
                     badgeBg={(unit.franchise as any)?.color?.replace('border', 'bg').replace('500', '600') || "bg-gray-600"}
                     badgeText="text-white"

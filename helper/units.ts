@@ -1,11 +1,11 @@
 "use server";
 
-import { createClient2 as createClient, createClient2 } from "@/lib/supabase/server";
+import { createClient2 as createClient } from "@/lib/supabase/server";
 
 export async function getUnits() {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("units")
+    .from("bot_monitoring")
     .select("*, franchise(*), user_account(*)")
     .order("created_at", { ascending: false });
 
@@ -20,8 +20,8 @@ export async function getUnits() {
 export async function getUnitsWithCounts() {
   const supabase = await createClient();
   const { data: units, error: unitsError } = await supabase
-    .from("units")
-    .select("*, franchise(*)")
+    .from("bot_monitoring")
+    .select("*, franchise(*), assigned_user:user_id(*)")
     .order("created_at", { ascending: false });
 
   if (unitsError) {
@@ -50,26 +50,14 @@ export async function getUnitsWithCounts() {
 
   if (accountsError) {
     console.error("Error fetching accounts for counts:", accountsError);
-    // Continue even if accounts fetch fails
   }
 
-  // Fetch all credentials for merging
   const { data: allCredentials, error: credError } = await supabase
     .from("credentials")
     .select("id, name, username, password");
 
   if (credError) {
     console.error("Error fetching credentials for units:", credError);
-  }
-
-  // Fetch live stats from bot_monitoring (secondary project)
-  const supabase2 = await createClient2();
-  const { data: botMonitoring, error: botError } = await supabase2
-    .from("bot_monitoring")
-    .select("pc_name, status, balance, level, pattern, strategy, duration");
-
-  if (botError) {
-    console.error("Error fetching bot monitoring data:", botError);
   }
 
   const safeUnits = units || [];
@@ -81,7 +69,6 @@ export async function getUnitsWithCounts() {
       (acc) => acc.unit_id === unit.id,
     );
 
-    // Group by funder alias from all linked funder accounts
     const funderMap: Record<
       string,
       { count: number; allias_color: string; text_color: string }
@@ -116,26 +103,12 @@ export async function getUnitsWithCounts() {
       text_color: data.text_color,
     }));
 
-    // Find matching bot monitoring record
-    // Match by unit_name (primary) vs pc_name (secondary)
-    const liveStats = botMonitoring?.find(
-      (bm) => bm.pc_name?.toLowerCase() === unit.unit_name?.toLowerCase(),
-    );
-
-    // Find matching credential
     const credential = safeCredentials.find(c => Number(c.id) === Number(unit.credential_id));
 
     return {
       ...unit,
       funder_counts,
       credentials: credential || null,
-      // Merge live stats from bot_monitoring if available
-      status: liveStats?.status || unit.status,
-      balance: liveStats?.balance,
-      level: liveStats?.level,
-      pattern: liveStats?.pattern,
-      strategy: liveStats?.strategy,
-      duration: liveStats?.duration,
     };
   });
 }
@@ -143,7 +116,7 @@ export async function getUnitsWithCounts() {
 export async function getUnitById(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("units")
+    .from("bot_monitoring")
     .select("*, franchise(*)")
     .eq("id", id)
     .single();
@@ -158,7 +131,7 @@ export async function getUnitById(id: string) {
 export async function createUnit(formData: any) {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("units")
+    .from("bot_monitoring")
     .insert([formData])
     .select();
 
@@ -171,7 +144,7 @@ export async function createUnit(formData: any) {
 export async function updateUnit(id: string, formData: any) {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("units")
+    .from("bot_monitoring")
     .update(formData)
     .eq("id", id)
     .select();
@@ -184,7 +157,7 @@ export async function updateUnit(id: string, formData: any) {
 
 export async function deleteUnit(id: string) {
   const supabase = await createClient();
-  const { error } = await supabase.from("units").delete().eq("id", id);
+  const { error } = await supabase.from("bot_monitoring").delete().eq("id", id);
 
   if (error) {
     throw new Error(error.message);
@@ -195,7 +168,7 @@ export async function deleteUnit(id: string) {
 export async function updateUnitStatus(id: string, status: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("units")
+    .from("bot_monitoring")
     .update({ status })
     .eq("id", id)
     .select();
@@ -209,7 +182,7 @@ export async function updateUnitStatus(id: string, status: string) {
 export async function archiveUnit(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("units")
+    .from("bot_monitoring")
     .update({ archived: true })
     .eq("id", id)
     .select();
@@ -223,7 +196,7 @@ export async function archiveUnit(id: string) {
 export async function unarchiveUnit(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("units")
+    .from("bot_monitoring")
     .update({ archived: false })
     .eq("id", id)
     .select();
