@@ -21,7 +21,7 @@ export default async function MyUnitsPage() {
         duration: item.duration,
         archived: false,
         assigned_user: item.assigned_user || null,
-        franchise: null
+        franchise_code: item.franchise_code || null
     }));
 
     return (

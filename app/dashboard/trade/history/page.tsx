@@ -3,8 +3,8 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { History, Search, ChevronDown, CalendarIcon, X, Download } from 'lucide-react'
 import { PlayHistoryTable, IncomeViewMode, DailyAggregatedRow } from '@/components/tables/play_history'
-import { createClient2 } from "@/lib/supabase/client"
 import { getPlayHistory, PlayHistory } from "@/helper/play_history"
+import { getFranchises } from "@/helper/franchise"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
@@ -57,20 +57,9 @@ const TradeHistoryPage = () => {
 
     const fetchFranchises = useCallback(async () => {
         try {
-            const supabase = createClient2()
-            // Fetch franchises with their unit pc_names
-            const { data: franchiseData, error } = await supabase
-                .from("franchise")
-                .select("franchise_name, franchise_code, investor_name, description")
-                .order("franchise_name", { ascending: true })
-
-            if (error) {
-                console.error("Error fetching franchises:", error)
-                return
-            }
+            const franchiseData = await getFranchises()
 
             // Map database columns to the component's expected format.
-            // Using franchise_name as both id and name since id is not present.
             const formatted = (franchiseData || []).map((f: any) => ({
                 id: f.franchise_name,
                 name: f.franchise_name,
@@ -86,26 +75,6 @@ const TradeHistoryPage = () => {
     useEffect(() => {
         fetchHistory()
         fetchFranchises()
-
-        const supabase = createClient2()
-        const channel = supabase
-            .channel('play_history_changes')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'play_history'
-                },
-                () => {
-                    fetchHistory()
-                }
-            )
-            .subscribe()
-
-        return () => {
-            supabase.removeChannel(channel)
-        }
     }, [fetchHistory, fetchFranchises])
 
     // Build a lookup: pc_name -> franchise name

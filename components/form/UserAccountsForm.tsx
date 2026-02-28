@@ -15,18 +15,10 @@ import { Franchise } from "@/types/franchise"
 
 const userAccountSchema = z.object({
     first_name: z.string().min(1, "First name is required"),
-    middle_name: z.string().optional(),
     last_name: z.string().min(1, "Last name is required"),
-    birth_year: z.string().optional(),
-    birth_month: z.string().optional(),
-    birth_day: z.string().optional(),
     email: z.string().email("Invalid email address").optional().or(z.literal("")),
     contact_number_1: z.string().min(1, "Contact number 1 is required"),
     contact_number_2: z.string().optional(),
-    address: z.string().min(1, "Address is required"),
-    city: z.string().optional(),
-    province: z.string().optional(),
-    zip_code: z.string().optional(),
     franchise: z.string().optional(),
 })
 
@@ -55,18 +47,10 @@ export const UserAccountsForm = ({ initialData, units = [], franchises = [], set
         resolver: zodResolver(userAccountSchema),
         defaultValues: {
             first_name: initialData?.first_name || "",
-            middle_name: initialData?.middle_name || "",
             last_name: initialData?.last_name || "",
-            birth_year: initialData?.birth_year || "",
-            birth_month: initialData?.birth_month || "",
-            birth_day: initialData?.birth_day || "",
             email: initialData?.email || "",
             contact_number_1: initialData?.contact_number_1 || "",
             contact_number_2: initialData?.contact_number_2 || "",
-            address: initialData?.address || "",
-            city: initialData?.city || "",
-            province: initialData?.province || "",
-            zip_code: initialData?.zip_code || "",
             franchise: initialData?.franchise || "",
         },
     })
@@ -77,7 +61,7 @@ export const UserAccountsForm = ({ initialData, units = [], franchises = [], set
 
         try {
             // Convert empty strings to null for numeric fields to avoid Postgres errors
-            const numericFields = ["birth_year", "birth_month", "birth_day", "contact_number_1", "contact_number_2", "zip_code"] as const;
+            const numericFields = ["contact_number_1", "contact_number_2"] as const;
             const sanitizedData = { ...data } as any;
 
             numericFields.forEach(field => {
@@ -138,7 +122,7 @@ export const UserAccountsForm = ({ initialData, units = [], franchises = [], set
             )}
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* FIRST NAME */}
                     <div className="space-y-2">
                         <Label htmlFor="first_name" className="text-white">FIRST NAME</Label>
@@ -149,17 +133,6 @@ export const UserAccountsForm = ({ initialData, units = [], franchises = [], set
                             placeholder="Enter first name"
                         />
                         {errors.first_name && <p className="text-xs text-red-500">{errors.first_name.message}</p>}
-                    </div>
-
-                    {/* MIDDLE NAME */}
-                    <div className="space-y-2">
-                        <Label htmlFor="middle_name" className="text-white">MIDDLE NAME</Label>
-                        <Input
-                            id="middle_name"
-                            {...register("middle_name")}
-                            className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
-                            placeholder="Enter middle name"
-                        />
                     </div>
 
                     {/* LAST NAME */}
@@ -175,36 +148,6 @@ export const UserAccountsForm = ({ initialData, units = [], franchises = [], set
                     </div>
                 </div>
 
-                {/* BIRTH DATE */}
-                <div className="grid grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="birth_year" className="text-white">BIRTH YEAR</Label>
-                        <Input
-                            id="birth_year"
-                            {...register("birth_year")}
-                            className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
-                            placeholder="YYYY"
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="birth_month" className="text-white">BIRTH MONTH</Label>
-                        <Input
-                            id="birth_month"
-                            {...register("birth_month")}
-                            className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
-                            placeholder="MM"
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="birth_day" className="text-white">BIRTH DAY</Label>
-                        <Input
-                            id="birth_day"
-                            {...register("birth_day")}
-                            className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
-                            placeholder="DD"
-                        />
-                    </div>
-                </div>
 
 
 
@@ -247,48 +190,7 @@ export const UserAccountsForm = ({ initialData, units = [], franchises = [], set
                     </div>
                 </div>
 
-                {/* ADDRESS */}
-                <div className="space-y-2">
-                    <Label htmlFor="address" className="text-white">ADDRESS</Label>
-                    <Input
-                        id="address"
-                        {...register("address")}
-                        className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
-                        placeholder="Enter street address"
-                    />
-                    {errors.address && <p className="text-xs text-red-500">{errors.address.message}</p>}
-                </div>
 
-                {/* CITY, PROVINCE, ZIP */}
-                <div className="grid grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="city" className="text-white">CITY</Label>
-                        <Input
-                            id="city"
-                            {...register("city")}
-                            className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
-                            placeholder="City"
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="province" className="text-white">PROVINCE</Label>
-                        <Input
-                            id="province"
-                            {...register("province")}
-                            className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
-                            placeholder="Province"
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="zip_code" className="text-white">ZIP CODE</Label>
-                        <Input
-                            id="zip_code"
-                            {...register("zip_code")}
-                            className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
-                            placeholder="ZipCode"
-                        />
-                    </div>
-                </div>
 
                 {/* FRANCHISE */}
                 <div className="space-y-2">

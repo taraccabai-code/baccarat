@@ -10,21 +10,20 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Trash2 } from "lucide-react"
+import { Trash2, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react"
 import { DeleteAccountModal } from "@/components/modal/Delete/DeleteAccount"
 import { deleteAccount } from "@/helper/accounts"
 import { toast } from "sonner"
 import Link from "next/link"
 import { EditUserAccountDialog } from "@/components/modal/Edit/EditUserAccountDialog"
+import { useMemo } from "react"
 export { AccountsTableSkeleton } from "@/components/skeleton/AccountTableSkeleton"
 
 interface Account {
     id: string
     first_name: string
-    middle_name: string
     last_name: string
     email?: string
-    address: string
     contact_number_1: string | number
     contact_number_2: string | number
     franchise?: string
@@ -32,6 +31,11 @@ interface Account {
     billing: string
     [key: string]: any
 }
+
+type SortConfig = {
+    key: keyof Account | null;
+    direction: 'asc' | 'desc' | null;
+};
 
 interface AccountsTableProps {
     data: Account[]
@@ -44,6 +48,63 @@ export const AccountsTable = ({ data, units = [], franchises = [], setAccounts }
     const [selectedAccount, setSelectedAccount] = useState<{ id: string, name: string } | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
+
+    const requestSort = (key: keyof Account) => {
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const sortedData = useMemo(() => {
+        let sortableData = [...data];
+        if (sortConfig.key !== null && sortConfig.direction !== null) {
+            sortableData.sort((a, b) => {
+                const aValue = a[sortConfig.key!];
+                const bValue = b[sortConfig.key!];
+
+                if (aValue === null || aValue === undefined) return 1;
+                if (bValue === null || bValue === undefined) return -1;
+
+                if (aValue < bValue) {
+                    return sortConfig.direction === 'asc' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'asc' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        return sortableData;
+    }, [data, sortConfig]);
+
+    const SortableHeader = ({ label, sortKey, className }: { label: string, sortKey: keyof Account, className?: string }) => {
+        const isActive = sortConfig.key === sortKey;
+
+        return (
+            <TableHead
+                className={`text-gray-400 font-bold uppercase text-[10px] tracking-wider cursor-pointer hover:text-white transition-colors px-4 ${className}`}
+                onClick={() => requestSort(sortKey)}
+            >
+                <div className="flex items-center justify-center gap-1 select-none group">
+                    <span>{label}</span>
+                    <div className="transition-colors p-0.5">
+                        {isActive ? (
+                            sortConfig.direction === 'asc' ? (
+                                <ArrowUp className="h-3 w-3 text-blue-500" />
+                            ) : (
+                                <ArrowDown className="h-3 w-3 text-blue-500" />
+                            )
+                        ) : (
+                            <ArrowUpDown className="h-3 w-3 text-gray-500 group-hover:text-gray-300" />
+                        )}
+                    </div>
+                </div>
+            </TableHead>
+        );
+    };
 
     const handleDeleteClick = (id: string, firstName: string, lastName: string) => {
         setSelectedAccount({ id, name: `${firstName} ${lastName}` });
@@ -80,25 +141,23 @@ export const AccountsTable = ({ data, units = [], franchises = [], setAccounts }
                     <TableHeader className="bg-[#0a0a0a]">
                         <TableRow className="border-gray-800 hover:bg-transparent">
                             <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">Actions</TableHead>
-                            <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">FRANCHISE</TableHead>
-                            <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">FIRST NAME</TableHead>
-                            <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">MIDDLE NAME</TableHead>
-                            <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">LAST NAME</TableHead>
-                            <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">EMAIL</TableHead>
-                            <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">ADDRESS</TableHead>
-                            <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">CONTACT NUMBER 1</TableHead>
-                            <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">CONTACT NUMBER 2</TableHead>
+                            <SortableHeader label="FRANCHISE" sortKey="franchise" />
+                            <SortableHeader label="FIRST NAME" sortKey="first_name" />
+                            <SortableHeader label="LAST NAME" sortKey="last_name" />
+                            <SortableHeader label="EMAIL" sortKey="email" />
+                            <SortableHeader label="CONTACT NUMBER 1" sortKey="contact_number_1" />
+                            <SortableHeader label="CONTACT NUMBER 2" sortKey="contact_number_2" />
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {data.length === 0 ? (
+                        {sortedData.length === 0 ? (
                             <TableRow className="border-gray-800">
-                                <TableCell colSpan={9} className="h-24 text-center text-gray-500 italic">
+                                <TableCell colSpan={7} className="h-24 text-center text-gray-500 italic">
                                     No accounts found.
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            data.map((account) => (
+                            sortedData.map((account) => (
                                 <TableRow key={account.id} className="border-gray-800">
                                     <TableCell>
                                         <div className="flex items-center justify-center gap-2">
@@ -115,14 +174,8 @@ export const AccountsTable = ({ data, units = [], franchises = [], setAccounts }
                                     </TableCell>
                                     <TableCell className="text-center text-gray-200 text-xs">{account.franchise || "-"}</TableCell>
                                     <TableCell className="text-center text-gray-200 text-xs">{account.first_name}</TableCell>
-                                    <TableCell className="text-center text-gray-200 text-xs">{account.middle_name || "-"}</TableCell>
                                     <TableCell className="text-center text-gray-200 text-xs">{account.last_name}</TableCell>
                                     <TableCell className="text-center text-gray-200 text-xs">{account.email || "-"}</TableCell>
-                                    <TableCell className="text-center text-gray-200 text-xs">
-                                        {[account.address, account.city, account.province, account.zip_code]
-                                            .filter(Boolean)
-                                            .join(", ") || "-"}
-                                    </TableCell>
                                     <TableCell className="text-center text-gray-200 text-xs">{account.contact_number_1 || "-"}</TableCell>
                                     <TableCell className="text-center text-gray-200 text-xs">{account.contact_number_2 || "-"}</TableCell>
                                 </TableRow>

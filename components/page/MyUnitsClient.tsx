@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { archiveUnit } from '@/helper/units'
-import { UnitsSearch } from '@/components/search/UnitsSearch'
 import { Button } from '@/components/ui/button'
+import { UnitsSearch } from '@/components/search/UnitsSearch'
 import { Plus, RefreshCw, Filter, ChevronDown, Check } from 'lucide-react'
 import UnitsList from '@/components/list/UnitsList'
 import { UnitModal } from '@/components/modal/Update/UnitModal'
 import { Unit } from "@/types/units"
-import { ArchiveUnitModal } from "@/components/modal/ArchieveUniit"
+import { deleteUnit } from '@/helper/units'
+import { DeleteUnitModal } from '@/components/modal/DeleteUnitModal'
 import { FranchiseModal } from "@/components/modal/FranchiseModal"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -36,9 +36,9 @@ export default function MyUnitsClient({ initialUnits }: MyUnitsClientProps) {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
     const [unitToEdit, setUnitToEdit] = useState<Unit | null>(null);
-    const [selectedUnitForArchive, setSelectedUnitForArchive] = useState<{ id: string, name: string } | null>(null);
-    const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
-    const [isArchiving, setIsArchiving] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [selectedUnitForDelete, setSelectedUnitForDelete] = useState<{ id: string, name: string } | null>(null);
     const [isFranchiseModalOpen, setIsFranchiseModalOpen] = useState(false);
     const [franchises, setFranchises] = useState<Franchise[]>([]);
     const [selectedFranchiseId, setSelectedFranchiseId] = useState<string | null>(null);
@@ -60,9 +60,9 @@ export default function MyUnitsClient({ initialUnits }: MyUnitsClientProps) {
                 target_profit: item.target_profit,
                 bet_size: item.bet_size,
                 duration: item.duration,
-                archived: false,
+
                 assigned_user: item.assigned_user || null,
-                franchise: null
+                franchise_code: item.franchise_code || null
             }));
             setUnits(mappedUnits);
             toast.success("Units refreshed from baccarat monitor");
@@ -92,28 +92,30 @@ export default function MyUnitsClient({ initialUnits }: MyUnitsClientProps) {
         setIsUnitModalOpen(true);
     };
 
-    const handleArchive = (id: string, name: string) => {
-        setSelectedUnitForArchive({ id, name });
-        setIsArchiveModalOpen(true);
+    const handleDelete = (id: string, name: string) => {
+        setSelectedUnitForDelete({ id, name });
+        setIsDeleteModalOpen(true);
     };
 
-    const handleArchiveConfirm = async () => {
-        if (!selectedUnitForArchive) return;
+    const handleDeleteConfirm = async () => {
+        if (!selectedUnitForDelete) return;
 
-        setIsArchiving(true);
+        setIsDeleting(true);
         try {
-            await archiveUnit(selectedUnitForArchive.id);
-            toast.success(`${selectedUnitForArchive.name} archived successfully`);
-            setIsArchiveModalOpen(false);
-            setSelectedUnitForArchive(null);
+            await deleteUnit(selectedUnitForDelete.id);
+            toast.success(`${selectedUnitForDelete.name} deleted successfully`);
+            setIsDeleteModalOpen(false);
+            setSelectedUnitForDelete(null);
             handleRefresh();
         } catch (error: any) {
-            console.error("Error archiving unit:", error);
-            toast.error("Failed to archive unit");
+            console.error("Error deleting unit:", error);
+            toast.error("Failed to delete unit");
         } finally {
-            setIsArchiving(false);
+            setIsDeleting(false);
         }
     };
+
+
 
     const handleStatusChange = async (unitId: string, newStatus: any) => {
         try {
@@ -143,7 +145,7 @@ export default function MyUnitsClient({ initialUnits }: MyUnitsClientProps) {
                 unit.franchise?.franchise_code?.toLowerCase().includes(query)
             );
             const matchesFranchise = !selectedFranchiseId || unit.franchise_id === selectedFranchiseId;
-            return !unit.archived && matchesSearch && matchesFranchise;
+            return matchesSearch && matchesFranchise;
         });
     }, [units, searchQuery, selectedFranchiseId]);
 
@@ -245,7 +247,7 @@ export default function MyUnitsClient({ initialUnits }: MyUnitsClientProps) {
                 <UnitsList
                     units={filteredUnits}
                     onEdit={handleEdit}
-                    onArchive={handleArchive}
+                    onDelete={handleDelete}
                     onStatusChange={handleStatusChange}
                 />
             </div>
@@ -264,13 +266,15 @@ export default function MyUnitsClient({ initialUnits }: MyUnitsClientProps) {
                 }}
             />
 
-            <ArchiveUnitModal
-                isOpen={isArchiveModalOpen}
-                onClose={() => setIsArchiveModalOpen(false)}
-                onConfirm={handleArchiveConfirm}
-                unitName={selectedUnitForArchive?.name || ""}
-                isPending={isArchiving}
+            <DeleteUnitModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={handleDeleteConfirm}
+                unitName={selectedUnitForDelete?.name || ""}
+                isPending={isDeleting}
             />
+
+
 
             <FranchiseModal
                 isOpen={isFranchiseModalOpen}

@@ -901,7 +901,7 @@ export const PlayBaccaratTable = ({
                                         className="text-white text-xs h-5 px-3 rounded-md border-0"
                                         style={{ backgroundColor: row.status === "Running" ? "#D32020" : "#868686" }}
                                         onClick={() => handleStatusChange(row, "Stopped")}
-                                        disabled={savingRowId === String(row.id) || row.status === "Stopped" || row.status === "Burned"}
+                                        disabled={savingRowId === String(row.id) || row.status !== "Running"}
                                     >
                                         Stop
                                     </Button>

@@ -5,7 +5,7 @@ export interface Unit {
     created_at: string;
     unit_id: string; // uuid
     unit_name: string;
-    archived: boolean;
+    archived?: boolean;
     api_base_url: string | null;
     status: UnitStatus | null; // USER-DEFINED
     franchise_id: string | null;

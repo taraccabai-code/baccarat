@@ -1,11 +1,10 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createClient2 } from "@/lib/supabase/server";
 import { Suspense } from "react";
-import { getFunders } from "@/helper/funders";
-import { getAccounts } from "@/helper/accounts";
-import { getUnits } from "@/helper/units";
 import { Users, Building2, Server, Activity, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { AddFranchiseQuickAction } from "@/components/action/AddFranchiseQuickAction";
 
 async function UserCheck() {
   const supabase = await createClient();
@@ -15,17 +14,25 @@ async function UserCheck() {
     redirect("/auth/login");
   }
 
-  const [funders, accounts, units] = await Promise.all([
-    getFunders(),
-    getAccounts(),
-    getUnits()
+  const supabase2 = await createClient2();
+
+  const [
+    { count: totalPC },
+    { count: runningPC },
+    { count: totalUserAccounts },
+    { count: totalFranchises }
+  ] = await Promise.all([
+    supabase2.from("bot_monitoring").select("*", { count: "exact", head: true }),
+    supabase2.from("bot_monitoring").select("*", { count: "exact", head: true }).eq("status", "Running"),
+    supabase2.from("user_account").select("*", { count: "exact", head: true }),
+    supabase2.from("franchise").select("*", { count: "exact", head: true }),
   ]);
 
   const stats = [
-    { title: "Total Funders", value: funders.length, icon: Building2, color: "text-blue-500", bg: "bg-blue-500/10" },
-    { title: "User Accounts", value: accounts.length, icon: Users, color: "text-purple-500", bg: "bg-purple-500/10" },
-    { title: "Server Units", value: units.length, icon: Server, color: "text-orange-500", bg: "bg-orange-500/10" },
-    { title: "Active Units", value: units.filter(u => u.status === 'enabled').length, icon: Activity, color: "text-green-500", bg: "bg-green-500/10" },
+    { title: "Total PC", value: totalPC || 0, icon: Server, color: "text-blue-500", bg: "bg-blue-500/10" },
+    { title: "Running PC", value: runningPC || 0, icon: Activity, color: "text-green-500", bg: "bg-green-500/10" },
+    { title: "Total User Accounts", value: totalUserAccounts || 0, icon: Users, color: "text-purple-500", bg: "bg-purple-500/10" },
+    { title: "Total Franchises", value: totalFranchises || 0, icon: Building2, color: "text-orange-500", bg: "bg-orange-500/10" },
   ];
 
   return (
@@ -60,34 +67,34 @@ async function UserCheck() {
         <div className="p-6 rounded-xl border border-[#1a1a1a] bg-[#0a0a0a] shadow-lg space-y-6">
           <h3 className="text-lg font-semibold text-white">Quick Actions</h3>
           <div className="flex flex-col gap-3">
-            <Button
-              className="h-12 bg-[#0d0d0d] border border-[#1a1a1a] hover:bg-[#141414] hover:border-blue-500/50 text-white flex items-center justify-start px-4 gap-4 transition-all w-full group/btn"
-              variant="outline"
-            >
-              <Plus className="h-5 w-5 text-blue-500 group-hover/btn:scale-110 transition-transform" />
-              <span className="text-sm font-medium">Add New Funder</span>
-            </Button>
-            <Button
-              className="h-12 bg-[#0d0d0d] border border-[#1a1a1a] hover:bg-[#141414] hover:border-purple-500/50 text-white flex items-center justify-start px-4 gap-4 transition-all w-full group/btn"
-              variant="outline"
-            >
-              <Users className="h-5 w-5 text-purple-500 group-hover/btn:scale-110 transition-transform" />
-              <span className="text-sm font-medium">Manage User Accounts</span>
-            </Button>
-            <Button
-              className="h-12 bg-[#0d0d0d] border border-[#1a1a1a] hover:bg-[#141414] hover:border-orange-500/50 text-white flex items-center justify-start px-4 gap-4 transition-all w-full group/btn"
-              variant="outline"
-            >
-              <Server className="h-5 w-5 text-orange-500 group-hover/btn:scale-110 transition-transform" />
-              <span className="text-sm font-medium">View Server Units</span>
-            </Button>
-            <Button
-              className="h-12 bg-[#0d0d0d] border border-[#1a1a1a] hover:bg-[#141414] hover:border-green-500/50 text-white flex items-center justify-start px-4 gap-4 transition-all w-full group/btn"
-              variant="outline"
-            >
-              <Activity className="h-5 w-5 text-green-500 group-hover/btn:scale-110 transition-transform" />
-              <span className="text-sm font-medium">View Trading Accounts</span>
-            </Button>
+            <AddFranchiseQuickAction />
+            <Link href="/dashboard/trading-accounts/user-accounts" className="w-full">
+              <Button
+                className="h-12 bg-[#0d0d0d] border border-[#1a1a1a] hover:bg-[#141414] hover:border-purple-500/50 text-white flex items-center justify-start px-4 gap-4 transition-all w-full group/btn"
+                variant="outline"
+              >
+                <Users className="h-5 w-5 text-purple-500 group-hover/btn:scale-110 transition-transform" />
+                <span className="text-sm font-medium">Manage User Accounts</span>
+              </Button>
+            </Link>
+            <Link href="/dashboard/trading-units/my-units" className="w-full">
+              <Button
+                className="h-12 bg-[#0d0d0d] border border-[#1a1a1a] hover:bg-[#141414] hover:border-orange-500/50 text-white flex items-center justify-start px-4 gap-4 transition-all w-full group/btn"
+                variant="outline"
+              >
+                <Server className="h-5 w-5 text-orange-500 group-hover/btn:scale-110 transition-transform" />
+                <span className="text-sm font-medium">View Server Units</span>
+              </Button>
+            </Link>
+            <Link href="/dashboard/trading-accounts/credentials" className="w-full">
+              <Button
+                className="h-12 bg-[#0d0d0d] border border-[#1a1a1a] hover:bg-[#141414] hover:border-green-500/50 text-white flex items-center justify-start px-4 gap-4 transition-all w-full group/btn"
+                variant="outline"
+              >
+                <Activity className="h-5 w-5 text-green-500 group-hover/btn:scale-110 transition-transform" />
+                <span className="text-sm font-medium">View Account Credentials</span>
+              </Button>
+            </Link>
           </div>
         </div>
 

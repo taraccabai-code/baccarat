@@ -9,7 +9,8 @@ import {
     User,
     DollarSign,
     Zap,
-    TrendingUp
+    TrendingUp,
+    Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -39,6 +40,7 @@ export interface UnitCardProps {
     credentialUsername?: string;
     credentialPassword?: string;
     assignedUserName?: string;
+    franchiseCode?: string;
     balance?: number | string;
     level?: number;
     pattern?: string;
@@ -46,6 +48,7 @@ export interface UnitCardProps {
     onStatusChange?: (id: string, status: UnitStatus) => void;
     onArchive?: (id: string, name: string) => void;
     onEdit?: (id: string) => void;
+    onDelete?: (id: string, name: string) => void;
 }
 
 export function UnitCard({
@@ -68,9 +71,11 @@ export function UnitCard({
     pattern,
     strategy,
     assignedUserName,
+    franchiseCode,
     onStatusChange,
     onArchive,
-    onEdit
+    onEdit,
+    onDelete
 }: UnitCardProps) {
     const [showPassword, setShowPassword] = useState(false);
     const getStatusConfig = (status: string) => {
@@ -101,11 +106,11 @@ export function UnitCard({
     return (
         <div
             className={cn(
-                "border text-card-foreground shadow hover:border-gray-600 transition-colors rounded-lg bg-gray-800 border-l-4",
+                "border text-card-foreground shadow hover:border-gray-600 transition-colors rounded-lg bg-gray-800 border-l-4 flex flex-col h-full",
                 accentColor
             )}
         >
-            <div className="p-6">
+            <div className="p-6 flex flex-col flex-1 h-full">
                 {/* Badge */}
                 <div className="flex justify-end mb-2 min-h-[28px]">
                     <span
@@ -127,10 +132,19 @@ export function UnitCard({
                     <div className="font-bold text-2xl font-mono text-white flex items-center justify-center gap-2">
                         {code}
                     </div>
+
                     {balance !== undefined && (
                         <div className="flex items-center justify-center gap-1 text-green-400 font-mono font-bold text-lg mt-1">
                             <DollarSign className="h-4 w-4" />
                             {typeof balance === 'number' ? balance.toLocaleString() : balance}
+                        </div>
+                    )}
+                    {assignedUserName && (
+                        <div className="flex items-center justify-center gap-1.5 mt-3 text-gray-400">
+                            <User className="h-3.5 w-3.5" />
+                            <span className="text-xs font-medium truncate max-w-[150px]">
+                                {assignedUserName}
+                            </span>
                         </div>
                     )}
 
@@ -138,7 +152,7 @@ export function UnitCard({
             
 
                 {/* Actions */}
-                <div className="flex items-center justify-between mt-[100px]">
+                <div className="flex items-center justify-between mt-auto pt-6">
                     <div className="flex items-center gap-2 px-2 py-1">
                         <div 
                             className="w-2 h-2 rounded-full shrink-0" 
@@ -157,15 +171,14 @@ export function UnitCard({
                         >
                             <Pencil className="h-4 w-4" />
                         </Button>
-
                         <Button
                             variant="ghost"
                             size="icon"
-                            title="Archive Unit"
-                            className="text-white hover:bg-gray-700"
-                            onClick={() => onArchive?.(id, code)}
+                            title="Delete Unit"
+                            className="text-red-400 hover:text-red-500 hover:bg-red-500/10"
+                            onClick={() => onDelete?.(id, code)}
                         >
-                            <Archive className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4" />
                         </Button>
                     </div>
                 </div>

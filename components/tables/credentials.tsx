@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useMemo, useState } from "react"
 import {
     Table,
     TableBody,
@@ -10,7 +10,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Pencil, Trash2, Copy, Check } from "lucide-react"
+import { Pencil, Trash2, Copy, Check, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 import { DeleteCredentialModal } from "@/components/modal/Delete/DeleteCredential"
@@ -39,6 +39,11 @@ interface Credential {
     [key: string]: any
 }
 
+type SortConfig = {
+    key: keyof Credential | null;
+    direction: 'asc' | 'desc' | null;
+};
+
 interface CredentialsTableProps {
     data: Credential[]
     funders?: any[] // Keep for now if needed by other components, though unused here
@@ -50,6 +55,7 @@ export const CredentialsTable = ({ data, funders = [] }: CredentialsTableProps) 
     const [selectedCredential, setSelectedCredential] = useState<{ id: string, name: string } | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
 
     const handleCopy = async (password: string, id: string) => {
         try {
@@ -61,6 +67,62 @@ export const CredentialsTable = ({ data, funders = [] }: CredentialsTableProps) 
             toast.error("Failed to copy password")
         }
     }
+
+    const requestSort = (key: keyof Credential) => {
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const sortedData = useMemo(() => {
+        let sortableData = [...data];
+        if (sortConfig.key !== null && sortConfig.direction !== null) {
+            sortableData.sort((a, b) => {
+                const aValue = a[sortConfig.key!];
+                const bValue = b[sortConfig.key!];
+
+                if (aValue === null || aValue === undefined) return 1;
+                if (bValue === null || bValue === undefined) return -1;
+
+                if (aValue < bValue) {
+                    return sortConfig.direction === 'asc' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'asc' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        return sortableData;
+    }, [data, sortConfig]);
+
+    const SortableHeader = ({ label, sortKey, className }: { label: string, sortKey: keyof Credential, className?: string }) => {
+        const isActive = sortConfig.key === sortKey;
+
+        return (
+            <TableHead
+                className={`text-gray-400 font-bold uppercase text-[10px] tracking-wider cursor-pointer hover:text-white transition-colors px-4 pb-4 ${className}`}
+                onClick={() => requestSort(sortKey)}
+            >
+                <div className="flex items-center justify-center gap-1 select-none group">
+                    <span>{label}</span>
+                    <div className="transition-colors p-0.5">
+                        {isActive ? (
+                            sortConfig.direction === 'asc' ? (
+                                <ArrowUp className="h-3 w-3 text-blue-500" />
+                            ) : (
+                                <ArrowDown className="h-3 w-3 text-blue-500" />
+                            )
+                        ) : (
+                            <ArrowUpDown className="h-3 w-3 text-gray-500 group-hover:text-gray-300" />
+                        )}
+                    </div>
+                </div>
+            </TableHead>
+        );
+    };
 
     const handleDeleteClick = (id: string, name: string) => {
         setSelectedCredential({ id, name });
@@ -89,41 +151,45 @@ export const CredentialsTable = ({ data, funders = [] }: CredentialsTableProps) 
             <Table>
                 <TableHeader className="bg-[#0a0a0a]">
                     <TableRow className="border-gray-800 hover:bg-transparent">
-                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">ACCOUNT NAME</TableHead>
-                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">USERNAME</TableHead>
+                                                <SortableHeader label="ACCOUNT NAME" sortKey="account_name" />
+
+                                                <SortableHeader label="USERNAME" sortKey="username" />
+
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">PASSWORD</TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4 pb-4">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {data.length === 0 ? (
+                    {sortedData.length === 0 ? (
                         <TableRow className="border-gray-800">
                             <TableCell colSpan={4} className="h-24 text-center text-gray-500 italic">
                                 No credentials found.
                             </TableCell>
                         </TableRow>
                     ) : (
-                        data.map((credential) => (
+                        sortedData.map((credential) => (
                             <TableRow key={credential.id} className="border-gray-800 hover:bg-[#111] transition-colors">
                                 <TableCell className="text-center text-gray-200 text-xs py-4">
                                     {credential.account_name || "-"}
                                 </TableCell>
                                 <TableCell className="text-center text-gray-200 text-xs py-4">{credential.username || "-"}</TableCell>
                                 <TableCell className="text-center text-gray-200 text-xs py-4 font-mono">
-                                    <div className="flex items-center justify-center gap-2 group">
+                                    <div className="relative inline-flex items-center justify-center group w-[120px]">
                                         <span>********</span>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[#262626]"
-                                            onClick={() => handleCopy(credential.password || "", credential.id)}
-                                        >
-                                            {copiedId === credential.id ? (
-                                                <Check className="h-3 w-3 text-green-500" />
-                                            ) : (
-                                                <Copy className="h-3 w-3 text-muted-foreground" />
-                                            )}
-                                        </Button>
+                                        <div className="absolute right-0">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[#262626] ml-2"
+                                                onClick={() => handleCopy(credential.password || "", credential.id)}
+                                            >
+                                                {copiedId === credential.id ? (
+                                                    <Check className="h-3 w-3 text-green-500" />
+                                                ) : (
+                                                    <Copy className="h-3 w-3 text-muted-foreground" />
+                                                )}
+                                            </Button>
+                                        </div>
                                     </div>
                                 </TableCell>
                                 <TableCell className="py-4">

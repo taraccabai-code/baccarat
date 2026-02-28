@@ -21,7 +21,7 @@ export async function getUnitsWithCounts() {
   const supabase = await createClient();
   const { data: units, error: unitsError } = await supabase
     .from("bot_monitoring")
-    .select("*, franchise(*), assigned_user:user_id(*)")
+    .select("*, assigned_user:user_id(*)")
     .order("created_at", { ascending: false });
 
   if (unitsError) {
@@ -60,9 +60,21 @@ export async function getUnitsWithCounts() {
     console.error("Error fetching credentials for units:", credError);
   }
 
+  // Fetch all franchises to manually match franchise_code
+  const { data: allFranchises, error: franchiseError } = await supabase
+    .from("franchise")
+    .select("id, franchise_name, franchise_code");
+
+  if (franchiseError) {
+    console.error("Error fetching franchises for units:", franchiseError);
+  }
+
+  console.log("[DEBUG] All franchises:", JSON.stringify(allFranchises));
+
   const safeUnits = units || [];
   const safeAccounts = accountsWithFunders || [];
   const safeCredentials = allCredentials || [];
+  const safeFranchises = allFranchises || [];
 
   return safeUnits.map((unit) => {
     const relatedAccounts = safeAccounts.filter(
@@ -105,10 +117,30 @@ export async function getUnitsWithCounts() {
 
     const credential = safeCredentials.find(c => Number(c.id) === Number(unit.credential_id));
 
+    // Match franchise_code from the franchise table using the raw franchise column
+    const franchiseValue = unit.franchise;
+    let matchedFranchiseCode: string | null = null;
+    let matchedFranchiseName: string | null = null;
+    
+    console.log(`[DEBUG] Unit ${unit.pc_name}: raw franchise value =`, JSON.stringify(franchiseValue), typeof franchiseValue);
+    
+    if (franchiseValue) {
+      const found = safeFranchises.find(
+        f => f.franchise_name === String(franchiseValue) 
+          || f.franchise_code === String(franchiseValue)
+          || String(f.id) === String(franchiseValue)
+      );
+      console.log(`[DEBUG] Unit ${unit.pc_name}: matched franchise =`, JSON.stringify(found));
+      matchedFranchiseCode = found?.franchise_code || null;
+      matchedFranchiseName = found?.franchise_name || null;
+    }
+
     return {
       ...unit,
       funder_counts,
       credentials: credential || null,
+      franchise_code: matchedFranchiseCode,
+      franchise_name: matchedFranchiseName,
     };
   });
 }
@@ -180,31 +212,13 @@ export async function updateUnitStatus(id: string, status: string) {
 }
 
 export async function archiveUnit(id: string) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("bot_monitoring")
-    .update({ archived: true })
-    .eq("id", id)
-    .select();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-  return data;
+  // Column 'archived' does not exist in bot_monitoring
+  return null;
 }
 
 export async function unarchiveUnit(id: string) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("bot_monitoring")
-    .update({ archived: false })
-    .eq("id", id)
-    .select();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-  return data;
+  // Column 'archived' does not exist in bot_monitoring
+  return null;
 }
 
 export async function checkUnitHealth(apiBaseUrl: string) {

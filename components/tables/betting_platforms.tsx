@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useMemo, useState } from "react"
 import {
     Table,
     TableBody,
@@ -10,7 +10,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Pencil, Trash2 } from "lucide-react"
+import { Pencil, Trash2, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react"
 import { DeletePlatformModal } from "@/components/modal/Delete/DeletePlatform"
 import { deletePlatformWebsite } from "@/helper/platform_websites"
 import { toast } from "sonner"
@@ -25,6 +25,11 @@ export type BettingPlatform = {
     raw?: any // Original record for editing
 }
 
+type SortConfig = {
+    key: keyof BettingPlatform | null;
+    direction: 'asc' | 'desc' | null;
+};
+
 interface BettingPlatformTableProps {
     data: BettingPlatform[]
     loading: boolean
@@ -33,9 +38,66 @@ interface BettingPlatformTableProps {
 
 export const BettingPlatformTable = ({ data, loading, onEdit }: BettingPlatformTableProps) => {
     const router = useRouter()
-    const [selectedPlatform, setSelectedPlatform] = React.useState<{ id: string | number, name: string } | null>(null)
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false)
-    const [isDeleting, setIsDeleting] = React.useState(false)
+    const [selectedPlatform, setSelectedPlatform] = useState<{ id: string | number, name: string } | null>(null)
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false)
+    const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
+
+    const requestSort = (key: keyof BettingPlatform) => {
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const sortedData = useMemo(() => {
+        let sortableData = [...data];
+        if (sortConfig.key !== null && sortConfig.direction !== null) {
+            sortableData.sort((a, b) => {
+                const aValue = a[sortConfig.key!];
+                const bValue = b[sortConfig.key!];
+
+                if (aValue === null || aValue === undefined) return 1;
+                if (bValue === null || bValue === undefined) return -1;
+
+                if (aValue < bValue) {
+                    return sortConfig.direction === 'asc' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'asc' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        return sortableData;
+    }, [data, sortConfig]);
+
+    const SortableHeader = ({ label, sortKey, className }: { label: string, sortKey: keyof BettingPlatform, className?: string }) => {
+        const isActive = sortConfig.key === sortKey;
+
+        return (
+            <TableHead
+                className={`text-gray-400 font-bold uppercase text-[10px] tracking-wider cursor-pointer hover:text-white transition-colors px-4 h-10 ${className}`}
+                onClick={() => requestSort(sortKey)}
+            >
+                <div className="flex items-center justify-center gap-1 select-none group">
+                    <span>{label}</span>
+                    <div className="transition-colors p-0.5">
+                        {isActive ? (
+                            sortConfig.direction === 'asc' ? (
+                                <ArrowUp className="h-3 w-3 text-blue-500" />
+                            ) : (
+                                <ArrowDown className="h-3 w-3 text-blue-500" />
+                            )
+                        ) : (
+                            <ArrowUpDown className="h-3 w-3 text-gray-500 group-hover:text-gray-300" />
+                        )}
+                    </div>
+                </div>
+            </TableHead>
+        );
+    };
 
     const handleDeleteClick = (id: string | number, name: string) => {
         setSelectedPlatform({ id, name })
@@ -64,18 +126,10 @@ export const BettingPlatformTable = ({ data, loading, onEdit }: BettingPlatformT
             <Table>
                 <TableHeader className="bg-[#0a0a0a]">
                     <TableRow className="border-gray-800 hover:bg-transparent">
-                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">
-                            Platform Name
-                        </TableHead>
-                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">
-                            Platform Code
-                        </TableHead>
-                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">
-                            Platform Website
-                        </TableHead>
-                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">
-                            Minimum Bet
-                        </TableHead>
+                        <SortableHeader label="Platform Name" sortKey="name" />
+                        <SortableHeader label="Platform Code" sortKey="code" />
+                        <SortableHeader label="Platform Website" sortKey="website" />
+                        <SortableHeader label="Minimum Bet" sortKey="min_bet" />
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center h-10 px-4">
                             Actions
                         </TableHead>
@@ -90,7 +144,7 @@ export const BettingPlatformTable = ({ data, loading, onEdit }: BettingPlatformT
                         </TableRow>
                     )}
 
-                    {!loading && data.length === 0 && (
+                    {!loading && sortedData.length === 0 && (
                         <TableRow className="border-gray-800">
                             <TableCell colSpan={5} className="text-center text-gray-500 h-32 italic">
                                 No platforms found.
@@ -98,7 +152,7 @@ export const BettingPlatformTable = ({ data, loading, onEdit }: BettingPlatformT
                         </TableRow>
                     )}
 
-                    {!loading && data.length > 0 && data.map((row) => (
+                    {!loading && sortedData.length > 0 && sortedData.map((row) => (
                         <TableRow key={row.id} className="border-gray-800 hover:bg-[#111] transition-colors">
                             <TableCell className="text-center text-gray-200 text-xs py-4">
                                 {row.name}

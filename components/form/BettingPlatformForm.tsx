@@ -17,6 +17,8 @@ const platformSchema = z.object({
     platform_website: z.string().min(1, "Platform website is required"),
     min_bet: z.string().min(1, "Minimum bet is required"),
     platform_code: z.string().min(1, "Platform code is required"),
+    text_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color format"),
+    bg_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color format"),
 })
 
 type PlatformFormValues = z.infer<typeof platformSchema>
@@ -43,6 +45,8 @@ export const BettingPlatformForm = ({ initialData, onSuccess, onCancel }: Bettin
             platform_website: initialData?.platform_website || "",
             min_bet: String(initialData?.min_bet || ""),
             platform_code: initialData?.platform_code || "",
+            text_color: initialData?.text_color || "#ffffff",
+            bg_color: initialData?.bg_color || "#000000",
         },
     })
 
@@ -66,6 +70,8 @@ export const BettingPlatformForm = ({ initialData, onSuccess, onCancel }: Bettin
                 platform_website: data.platform_website,
                 min_bet: data.min_bet,
                 platform_code: data.platform_code,
+                text_color: data.text_color,
+                bg_color: data.bg_color,
             }
 
             if (initialData?.id) {
@@ -146,6 +152,40 @@ export const BettingPlatformForm = ({ initialData, onSuccess, onCancel }: Bettin
                     placeholder="Enter minimum bet"
                 />
                 {errors.min_bet && <p className="text-xs text-red-500">{errors.min_bet.message}</p>}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="text_color" className="text-white">
+                        Text Color
+                    </Label>
+                    <div className="flex items-center gap-2">
+                        <Input
+                            id="text_color"
+                            type="color"
+                            {...register("text_color")}
+                            className="h-10 w-full bg-gray-800 border-gray-700 p-1 cursor-pointer"
+                        />
+                        <span className="text-xs font-mono text-gray-400 uppercase">{watch("text_color")}</span>
+                    </div>
+                    {errors.text_color && <p className="text-xs text-red-500">{errors.text_color.message}</p>}
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="bg_color" className="text-white">
+                        Background Color
+                    </Label>
+                    <div className="flex items-center gap-2">
+                        <Input
+                            id="bg_color"
+                            type="color"
+                            {...register("bg_color")}
+                            className="h-10 w-full bg-gray-800 border-gray-700 p-1 cursor-pointer"
+                        />
+                        <span className="text-xs font-mono text-gray-400 uppercase">{watch("bg_color")}</span>
+                    </div>
+                    {errors.bg_color && <p className="text-xs text-red-500">{errors.bg_color.message}</p>}
+                </div>
             </div>
 
             <div className="flex justify-end gap-3 pt-6 border-t border-gray-800">

@@ -12,7 +12,7 @@ import { getFranchises } from "@/helper/franchise"
 import { Franchise } from "@/types/franchise"
 import { getAccounts, updateAccount } from "@/helper/accounts"
 import { Account } from "@/types/accounts"
-import { createUnit, updateUnit } from "@/helper/units"
+
 
 interface UnitFormProps {
     initialData?: any | null
@@ -26,7 +26,10 @@ export function UnitForm({ initialData, onSuccess }: UnitFormProps) {
     const isEditing = !!initialData
     const [isLoading, setIsLoading] = useState(false)
     const [accounts, setAccounts] = useState<Account[]>([])
+    const [franchises, setFranchises] = useState<Franchise[]>([])
     const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
+    const [selectedFranchise, setSelectedFranchise] = useState<Franchise | null>(null)
+
     const [originalAccountId, setOriginalAccountId] = useState<string | null>(null)
 
     const [formData, setFormData] = useState({
@@ -41,6 +44,7 @@ export function UnitForm({ initialData, onSuccess }: UnitFormProps) {
                     getAccounts()
                 ])
                 setAccounts(accountData || [])
+                setFranchises(franchiseData || [])
 
                 // If editing, find the account linked to this unit
                 if (isEditing && initialData) {
@@ -51,6 +55,15 @@ export function UnitForm({ initialData, onSuccess }: UnitFormProps) {
                     if (currentAccount) {
                         setSelectedAccount(currentAccount)
                         setOriginalAccountId(currentAccount.id)
+                    }
+                    
+                    // Also find the franchise for this unit
+                    if (initialData.franchise_name || initialData.franchise_code) {
+                        const currentFranchise = franchiseData?.find(f => 
+                            f.franchise_name === initialData.franchise_name ||
+                            f.franchise_code === initialData.franchise_code
+                        )
+                        if (currentFranchise) setSelectedFranchise(currentFranchise)
                     }
                 }
             } catch (error) {
@@ -69,18 +82,13 @@ export function UnitForm({ initialData, onSuccess }: UnitFormProps) {
             let unitId = initialData?.id;
 
             if (isEditing && initialData) {
-                // 1. Update primary units table
-                await updateUnit(initialData.id, {
-                    pc_name: formData.pc_name,
-                    user_id: selectedAccount?.id || null,
-                    is_occupied: !!selectedAccount
-                })
-
-                // 2. Update secondary baccarat monitor table
+                // 1. Update unit in bot_monitoring (secondary/only table used now)
                 await updateBaccaratRow({
                     id: initialData.id,
                     pc_name: formData.pc_name,
-                    // Preserve existing values or use defaults for required fields
+                    user_id: selectedAccount?.id || null,
+                    franchise: selectedFranchise?.franchise_name || null,
+                    // Preserve existing values or use defaults
                     level: initialData.level ?? 1,
                     pattern: initialData.pattern ?? "",
                     target_profit: initialData.target_profit ?? 0,
@@ -88,7 +96,6 @@ export function UnitForm({ initialData, onSuccess }: UnitFormProps) {
                     strategy: initialData.strategy ?? "Standard",
                     status: initialData.status ?? "Idle",
                     duration: initialData.duration ?? 0,
-                    user_id: selectedAccount?.id || null,
                 } as any)
 
                 // 3. Update account linking if changed
@@ -105,19 +112,8 @@ export function UnitForm({ initialData, onSuccess }: UnitFormProps) {
 
                 toast.success("Unit updated successfully")
             } else {
-                // 1. Create in primary units table
-                const [newUnit] = await createUnit({
-                    pc_name: formData.pc_name,
-                    user_id: selectedAccount?.id || null,
-                    status: "Idle",
-                    is_occupied: !!selectedAccount,
-                    archived: false
-                })
-                
-                unitId = newUnit.id;
-
-                // 2. Create in secondary baccarat monitor table
-                await createBaccaratRow({
+                // 1. Create in bot_monitoring
+                const createdRows = await createBaccaratRow({
                     pc_name: formData.pc_name,
                     status: "Idle",
                     level: 1,
@@ -127,7 +123,14 @@ export function UnitForm({ initialData, onSuccess }: UnitFormProps) {
                     strategy: "Standard",
                     duration: 0,
                     user_id: selectedAccount?.id || null,
+                    franchise: selectedFranchise?.franchise_name || null,
                 })
+                
+                if (!createdRows || createdRows.length === 0) {
+                    throw new Error("Failed to create unit: No data returned from database")
+                }
+                
+                unitId = createdRows[0].id;
 
                 // 3. Link account if selected
                 if (selectedAccount) {
@@ -148,6 +151,20 @@ export function UnitForm({ initialData, onSuccess }: UnitFormProps) {
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div className="flex flex-col gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="franchise">Franchise</Label>
+                    <SearchableSelect
+                        id="franchise"
+                        value={selectedFranchise?.id || ""}
+                        onChange={(id) => setSelectedFranchise(franchises.find(f => f.id === id) || null)}
+                        options={franchises.map(f => ({ 
+                            value: f.id, 
+                            label: f.franchise_name || "Unknown"
+                        }))}
+                        placeholder="Select franchise"
+                    />
+                </div>
+                
                 <div className="space-y-2">
                     <Label htmlFor="pc_name">PC Name / Unit Name</Label>
                     <Input

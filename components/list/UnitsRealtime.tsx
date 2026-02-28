@@ -148,8 +148,8 @@ export const UnitsRealtime = React.forwardRef(({ initialData, searchQuery: exter
 
     const filteredUnits = units.filter(unit => {
         const matchesSearch = unit.unit_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            unit.franchise?.franchise_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            unit.franchise?.franchise_code?.toLowerCase().includes(searchQuery.toLowerCase());
+            unit.franchise_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            unit.franchise_code?.toLowerCase().includes(searchQuery.toLowerCase());
         return !unit.archived && matchesSearch;
     });
 
@@ -161,13 +161,14 @@ export const UnitsRealtime = React.forwardRef(({ initialData, searchQuery: exter
         <div className="flex flex-col h-full">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6">
                 {filteredUnits.map((unit) => {
-                    const styles = getFranchiseStyles(unit.franchise?.franchise_code);
+                    const styles = getFranchiseStyles(unit.franchise_code);
                     return (
                         <UnitCard
                             key={unit.id}
                             id={unit.id}
                             code={unit.pc_name || unit.unit_name}
-                            shortName={unit.franchise?.franchise_code || "UN"}
+                            shortName={unit.franchise_code || "UN"}
+                            franchiseCode={unit.franchise_code || undefined}
                             company={
                                 unit.assigned_user
                                     ? `${unit.assigned_user.first_name || ""} ${unit.assigned_user.middle_name || ""} ${unit.assigned_user.last_name || ""}`.replace(/\s+/g, " ").trim()

@@ -1,12 +1,14 @@
 import React from 'react'
 import { Unit } from '@/types/units'
 import { UnitCard } from '../card/CardUnit'
+import { getFranchiseStyles } from '@/lib/utils'
 
 interface UnitWithCounts extends Partial<Unit> {
     id: string;
     unit_name: string;
     status: any;
     unit_id: string;
+    franchise_code?: string | null;
     funder_counts?: {
         allias: string;
         count: number;
@@ -32,10 +34,11 @@ interface UnitsListProps {
     units: UnitWithCounts[];
     onEdit?: (unit: any) => void;
     onArchive?: (id: string, name: string) => void;
+    onDelete?: (id: string, name: string) => void;
     onStatusChange?: (id: string, status: any) => void;
 }
 
-const UnitsList = ({ units, onEdit, onArchive, onStatusChange }: UnitsListProps) => {
+const UnitsList = ({ units, onEdit, onArchive, onDelete, onStatusChange }: UnitsListProps) => {
     if (!units || units.length === 0) {
         return (
             <div className="flex h-[400px] flex-col items-center justify-center rounded-lg border border-dashed border-gray-800 bg-gray-950/50 p-8 text-center animate-in fade-in-50">
@@ -65,27 +68,33 @@ const UnitsList = ({ units, onEdit, onArchive, onStatusChange }: UnitsListProps)
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 p-6">
-            {units.map((unit) => (
+            {units.map((unit) => {
+                const styles = getFranchiseStyles(unit.franchise_code || "");
+                return (
                 <UnitCard
                     key={unit.id}
                     id={unit.id}
                     code={unit.unit_name}
-                    shortName={unit.franchise?.franchise_code || "UN"}
+                    shortName={unit.franchise_code || "UN"}
+                    franchiseCode={unit.franchise_code || undefined}
                     company={
                         unit.assigned_user
                             ? `${unit.assigned_user.first_name || ""} ${unit.assigned_user.middle_name || ""} ${unit.assigned_user.last_name || ""}`.replace(/\s+/g, " ").trim()
-                            : (unit.franchise?.franchise_name || undefined)
+                            : undefined
                     }
                     status={unit.status || "disabled"}
                     serial={unit.unit_id?.split("-")[0]?.toUpperCase() || "N/A"}
                     owner={
                         unit.assigned_user
                             ? `${unit.assigned_user.first_name || ""} ${unit.assigned_user.middle_name || ""} ${unit.assigned_user.last_name || ""}`.replace(/\s+/g, " ").trim()
-                            : (unit.franchise?.franchise_name || "No user assigned")
+                            : "No user assigned"
                     }
-                    accentColor={(unit.franchise as any)?.color || "border-gray-600"}
-                    badgeBg={(unit.franchise as any)?.color?.replace('border', 'bg').replace('500', '600') || "bg-gray-600"}
-                    badgeText="text-white"
+                    assignedUserName={
+                        unit.assigned_user
+                            ? `${unit.assigned_user.first_name || ""} ${unit.assigned_user.middle_name || ""} ${unit.assigned_user.last_name || ""}`.replace(/\s+/g, " ").trim()
+                            : undefined
+                    }
+                    {...styles}
                     tags={unit.funder_counts?.map(fc => ({
                         label: fc.allias,
                         count: fc.count,
@@ -98,9 +107,11 @@ const UnitsList = ({ units, onEdit, onArchive, onStatusChange }: UnitsListProps)
                     balance={unit.balance ?? undefined}
                     onEdit={() => onEdit?.(unit)}
                     onArchive={onArchive}
+                    onDelete={onDelete}
                     onStatusChange={onStatusChange}
                 />
-            ))}
+            );
+            })}
         </div>
     )
 }
