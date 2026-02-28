@@ -22,6 +22,8 @@ export type BettingPlatform = {
     code: string
     website: string
     min_bet: number | string
+    text_color?: string
+    bg_color?: string
     raw?: any // Original record for editing
 }
 
@@ -157,8 +159,16 @@ export const BettingPlatformTable = ({ data, loading, onEdit }: BettingPlatformT
                             <TableCell className="text-center text-gray-200 text-xs py-4">
                                 {row.name}
                             </TableCell>
-                            <TableCell className="text-center text-gray-200 text-xs py-4">
-                                {row.code}
+                            <TableCell className="text-center py-4">
+                                <span
+                                    className="px-2.5 py-1 rounded-md text-xs font-medium"
+                                    style={{
+                                        backgroundColor: row.bg_color || 'transparent',
+                                        color: row.text_color || '#e5e7eb',
+                                    }}
+                                >
+                                    {row.code}
+                                </span>
                             </TableCell>
                             <TableCell className="text-center text-gray-200 text-xs py-4">
                                 <a

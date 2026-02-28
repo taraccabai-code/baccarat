@@ -16,6 +16,7 @@ type BaccaratRecord = {
   strategy?: string | null;
   duration?: number | string | null;
   franchise_code?: string | null;
+  platform_code?: string | null;
   assigned_user?: {
     first_name: string | null;
     middle_name: string | null;
@@ -44,6 +45,7 @@ type BotMonitoringRow = {
     middle_name: string | null;
     last_name: string | null;
   }[] | null;
+  platform_code: string | null;
 };
 
 /**
@@ -55,7 +57,7 @@ export async function getBaccaratData(): Promise<BaccaratRecord[]> {
 
   const { data, error } = await supabase
     .from("bot_monitoring")
-    .select("id, pc_name, status, balance, level, pattern, target_profit, bet, strategy, duration, franchise, assigned_user:user_id(first_name, middle_name, last_name)")
+    .select("id, pc_name, status, balance, level, pattern, target_profit, bet, strategy, duration, franchise, platform_code, assigned_user:user_id(first_name, middle_name, last_name)")
     .order("id", { ascending: true });
 
   if (error) {
@@ -95,6 +97,7 @@ export async function getBaccaratData(): Promise<BaccaratRecord[]> {
       strategy: row.strategy ?? null,
       duration: row.duration ?? null,
       franchise_code: franchiseCode,
+      platform_code: row.platform_code ?? null,
       assigned_user: Array.isArray(row.assigned_user) ? row.assigned_user[0] : row.assigned_user ?? null,
       actions: null,
     };
@@ -115,6 +118,7 @@ type UpdateBaccaratPayload = {
   duration?: number | null;
   user_id?: string | null;
   franchise?: string | null;
+  platform_code?: string | null;
 };
 
 export async function updateBaccaratRow({
@@ -129,6 +133,7 @@ export async function updateBaccaratRow({
   duration,
   user_id,
   franchise,
+  platform_code,
 }: UpdateBaccaratPayload): Promise<void> {
   const supabase = await createClient2();
 
@@ -164,6 +169,10 @@ export async function updateBaccaratRow({
 
   if (franchise !== undefined) {
     updateData.franchise = franchise;
+  }
+
+  if (platform_code !== undefined) {
+    updateData.platform_code = platform_code;
   }
 
 

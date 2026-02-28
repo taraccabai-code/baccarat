@@ -21,6 +21,7 @@ import { PlayBaccaratTable, type BaccaratRow } from "@/components/tables/play_ba
 import { createClient2 } from "@/lib/supabase/client"
 import { getBaccaratData, updateBaccaratRow } from "@/helper/baccarat"
 import { getFunders } from "@/helper/funders"
+import { getPlatformWebsites } from "@/helper/platform_websites"
 
 const PlayBacarratPage = () => {
     const [selectedFilter, setSelectedFilter] = useState("All")
@@ -35,6 +36,7 @@ const PlayBacarratPage = () => {
     const [funders, setFunders] = useState<any[]>([])
     const [selectedFunder, setSelectedFunder] = useState("all")
     const [statusFilter, setStatusFilter] = useState("all")
+    const [platforms, setPlatforms] = useState<{id: string | number; platform_code: string | null; text_color?: string | null; bg_color?: string | null}[]>([])
 
     const fetchDropdownData = useCallback(async () => {
         try {
@@ -51,12 +53,19 @@ const PlayBacarratPage = () => {
     const fetchData = useCallback(async (showLoading = false) => {
         try {
             if (showLoading) setLoading(true)
-            const [baccaratData, fundersData] = await Promise.all([
+            const [baccaratData, fundersData, platformData] = await Promise.all([
                 getBaccaratData(),
-                getFunders()
+                getFunders(),
+                getPlatformWebsites()
             ])
             setRows(baccaratData as BaccaratRow[])
             setFunders(fundersData)
+            setPlatforms(platformData.map(p => ({
+                id: p.id,
+                platform_code: p.platform_code,
+                text_color: p.text_color,
+                bg_color: p.bg_color
+            })))
             setError(null)
         } catch (err: any) {
             console.error("Error fetching baccarat data:", err)
@@ -300,6 +309,7 @@ const PlayBacarratPage = () => {
                     data={filteredRows}
                     loading={loading}
                     error={error}
+                    platforms={platforms}
                     onRowUpdate={handleUpdateRow}
                     selectedRows={selectedRows}
                     onSelectionChange={setSelectedRows}

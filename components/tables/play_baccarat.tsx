@@ -41,6 +41,8 @@ export type BaccaratRow = {
     duration?: number | string | null
     strategy?: string | null
     franchise?: string | null
+    franchise_code?: string | null
+    platform_code?: string | null
     assigned_user?: {
         first_name: string | null
         middle_name: string | null
@@ -65,6 +67,7 @@ interface PlayBaccaratTableProps {
     data: BaccaratRow[]
     loading: boolean
     error: string | null
+    platforms: { id: string | number; platform_code: string | null; text_color?: string | null; bg_color?: string | null }[]
     onRowUpdate?: (updatedRow: Partial<BaccaratRow> & { id: string | number }) => void
     selectedRows: Set<string | number>
     onSelectionChange: (selected: Set<string | number>) => void
@@ -117,6 +120,7 @@ export const PlayBaccaratTable = ({
     data,
     loading,
     error,
+    platforms,
     onRowUpdate,
     selectedRows,
     onSelectionChange
@@ -131,6 +135,7 @@ export const PlayBaccaratTable = ({
     const [editingDurationRowId, setEditingDurationRowId] = useState<string | null>(null)
     const [editingDurationValue, setEditingDurationValue] = useState("")
     const [strategyByRowId, setStrategyByRowId] = useState<Record<string, string>>({})
+    const [platformByRowId, setPlatformByRowId] = useState<Record<string, string | null>>({})
     const [savingRowId, setSavingRowId] = useState<string | null>(null)
     const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null })
 
@@ -178,6 +183,12 @@ export const PlayBaccaratTable = ({
 
             const direction = sortConfig.direction === 'asc' ? 1 : -1
 
+            if (sortConfig.key === 'assigned_user') {
+                const aUser = aValue ? `${(aValue as any).first_name || ""} ${(aValue as any).middle_name || ""} ${(aValue as any).last_name || ""}`.trim() : ""
+                const bUser = bValue ? `${(bValue as any).first_name || ""} ${(bValue as any).middle_name || ""} ${(bValue as any).last_name || ""}`.trim() : ""
+                return aUser.localeCompare(bUser) * direction
+            }
+
             if (typeof aValue === 'number' && typeof bValue === 'number') {
                 return (aValue - bValue) * direction
             }
@@ -202,6 +213,15 @@ export const PlayBaccaratTable = ({
             return row.strategy ?? ""
         },
         [strategyByRowId]
+    )
+
+    const getPlatform = useCallback(
+        (row: BaccaratRow) => {
+            const id = String(row.id)
+            if (id in platformByRowId) return platformByRowId[id]
+            return row.platform_code ?? null
+        },
+        [platformByRowId]
     )
 
     const getLevel = useCallback(
@@ -382,6 +402,11 @@ export const PlayBaccaratTable = ({
         })
     }, [betSizeByRowId, data, strategyByRowId])
 
+    const handlePlatformChange = useCallback((rowId: string | number, value: string) => {
+        const id = String(rowId)
+        setPlatformByRowId((prev) => ({ ...prev, [id]: value }))
+    }, [])
+
     const hasRowChanges = useCallback(
         (row: BaccaratRow) => {
             const id = String(row.id)
@@ -391,9 +416,10 @@ export const PlayBaccaratTable = ({
             if (id in betSizeByRowId && betSizeByRowId[id] !== (row.bet_size != null ? Number(row.bet_size) : null)) return true
             if (id in durationByRowId && durationByRowId[id] !== (row.duration != null ? String(row.duration) : "0")) return true
             if (id in strategyByRowId && strategyByRowId[id] !== (row.strategy ?? "")) return true
+            if (id in platformByRowId && platformByRowId[id] !== (row.platform_code ?? null)) return true
             return false
         },
-        [levelByRowId, patternByRowId, targetProfitByRowId, betSizeByRowId, durationByRowId, strategyByRowId]
+        [levelByRowId, patternByRowId, targetProfitByRowId, betSizeByRowId, durationByRowId, strategyByRowId, platformByRowId]
     )
 
     const handleCancelRowChanges = useCallback((row: BaccaratRow) => {
@@ -434,6 +460,12 @@ export const PlayBaccaratTable = ({
             delete next[id]
             return next
         })
+        setPlatformByRowId((prev) => {
+            if (!(id in prev)) return prev
+            const next = { ...prev }
+            delete next[id]
+            return next
+        })
         if (editingTargetProfitRowId === id) {
             setEditingTargetProfitRowId(null)
             setEditingTargetProfitValue("")
@@ -456,6 +488,9 @@ export const PlayBaccaratTable = ({
             const bet_size = getBetSize(row)
             const durationRaw = getDuration(row)
             const duration = durationRaw.trim() === "" ? 0 : Number(durationRaw.replace(/\D/g, "")) || 0
+            const strategy = getStrategy(row)
+            const platformValue = getPlatform(row)
+            const platform_code = platformValue === "-" ? null : platformValue
 
             try {
                 setSavingRowId(id)
@@ -468,13 +503,11 @@ export const PlayBaccaratTable = ({
                     target_profit,
                     bet_size,
                     duration,
-                    strategy: getStrategy(row)
+                    strategy,
+                    platform_code
                 })
 
-                // After successful save, clear local dirty state so row is "clean"
-                handleCancelRowChanges(row)
-
-                // Update row in parent state instead of refetching everything
+                // Update row in parent state BEFORE clearing local dirty state
                 onRowUpdate?.({
                     id: row.id,
                     level,
@@ -482,8 +515,12 @@ export const PlayBaccaratTable = ({
                     target_profit,
                     bet_size,
                     duration,
-                    strategy: getStrategy(row)
+                    strategy,
+                    platform_code: platform_code
                 })
+
+                // After successful save, clear local dirty state so row is "clean"
+                handleCancelRowChanges(row)
             } catch (error: any) {
                 console.error("Save failed:", error)
                 alert(error.message || "Failed to save changes for this row.")
@@ -491,12 +528,14 @@ export const PlayBaccaratTable = ({
                 setSavingRowId((current) => (current === id ? null : current))
             }
         },
-        [getLevel, getPattern, getTargetProfit, getBetSize, getDuration, getStrategy, handleCancelRowChanges, onRowUpdate]
+        [getLevel, getPattern, getTargetProfit, getBetSize, getDuration, getStrategy, getPlatform, handleCancelRowChanges, onRowUpdate]
     )
 
     const handleStatusChange = useCallback(
         async (row: BaccaratRow, newStatus: string) => {
             const id = String(row.id)
+            const platformValue = getPlatform(row)
+            const platform_code = platformValue === "-" ? null : platformValue
             try {
                 setSavingRowId(id)
                 await updateBaccaratRow({
@@ -507,6 +546,7 @@ export const PlayBaccaratTable = ({
                     bet_size: getBetSize(row),
                     duration: Number(getDuration(row)) || 0,
                     strategy: getStrategy(row),
+                    platform_code,
                     status: newStatus,
                     command: newStatus === "Running"
                 })
@@ -554,8 +594,18 @@ export const PlayBaccaratTable = ({
                                 <span>Units</span>
                             </div>
                         </TableHead>
-                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-right px-4">
-                            <div className="flex items-center justify-end gap-1 select-none">
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-left px-4">
+                            <div className="flex items-center justify-start gap-1 select-none">
+                                <div
+                                    className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
+                                    onClick={() => handleSort('assigned_user')}
+                                >
+                                    {sortConfig.key === 'assigned_user' ? (
+                                        sortConfig.direction === 'asc' ? <ArrowUp className="h-3 w-3 text-blue-500" /> : <ArrowDown className="h-3 w-3 text-blue-500" />
+                                    ) : (
+                                        <ArrowUpDown className="h-3 w-3 text-gray-500" />
+                                    )}
+                                </div>
                                 <span>User</span>
                             </div>
                         </TableHead>
@@ -587,6 +637,21 @@ export const PlayBaccaratTable = ({
                                     )}
                                 </div>
                                 <span>Bal</span>
+                            </div>
+                        </TableHead>
+                        <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
+                            <div className="flex items-center justify-center gap-1 select-none">
+                                <div
+                                    className="cursor-pointer hover:text-gray-200 transition-colors p-0.5"
+                                    onClick={() => handleSort('franchise_code')}
+                                >
+                                    {sortConfig.key === 'franchise_code' ? (
+                                        sortConfig.direction === 'asc' ? <ArrowUp className="h-3 w-3 text-blue-500" /> : <ArrowDown className="h-3 w-3 text-blue-500" />
+                                    ) : (
+                                        <ArrowUpDown className="h-3 w-3 text-gray-500" />
+                                    )}
+                                </div>
+                                <span>Platform</span>
                             </div>
                         </TableHead>
                         <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-wider text-center px-4">
@@ -724,7 +789,7 @@ export const PlayBaccaratTable = ({
                             <TableCell className="text-right text-gray-200 text-xs px-4">
                                 {row.units ?? ""}
                             </TableCell>
-                            <TableCell className="text-right text-gray-200 text-xs px-4">
+                            <TableCell className="text-left text-gray-200 text-xs px-4">
                                 {row.assigned_user 
                                     ? `${row.assigned_user.first_name || ""} ${row.assigned_user.middle_name || ""} ${row.assigned_user.last_name || ""}`.trim() 
                                     : "-"}
@@ -745,6 +810,28 @@ export const PlayBaccaratTable = ({
                             </TableCell>
                             <TableCell className="text-right text-gray-200 text-xs px-4">
                                 {row.user_balance ?? ""}
+                            </TableCell>
+                            <TableCell className="text-center text-gray-200 text-xs px-4">
+                                <Select
+                                    value={getPlatform(row) ?? "-"}
+                                    onValueChange={(value) => handlePlatformChange(row.id, value)}
+                                >
+                                    <SelectTrigger className="w-24 h-7 text-xs bg-transparent border-[#868686] text-gray-200 justify-center mx-auto">
+                                        <SelectValue placeholder="Platform" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-[#1a1a1a] border-gray-800" position="popper" side="bottom" sideOffset={4}>
+                                        <SelectItem value="-" className="text-gray-200 hover:bg-gray-800">None</SelectItem>
+                                        {platforms.map(p => (
+                                            <SelectItem 
+                                                key={p.platform_code || p.id} 
+                                                value={p.platform_code || "-"} 
+                                                className="hover:bg-gray-800"
+                                            >
+                                                {p.platform_code || "Unknown"}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </TableCell>
                             <TableCell className="text-center text-gray-200 text-xs px-4">
                                 <Select

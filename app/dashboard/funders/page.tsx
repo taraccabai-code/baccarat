@@ -64,6 +64,8 @@ const FundersPage = () => {
         code: platform.platform_code || "N/A",
         website: platform.platform_website || "N/A",
         min_bet: platform.min_bet || "0",
+        text_color: platform.text_color || undefined,
+        bg_color: platform.bg_color || undefined,
         raw: platform // Pass the full record for editing
     }))
 
