@@ -118,6 +118,7 @@ type UpdateBaccaratPayload = {
   duration?: number | null;
   user_id?: string | null;
   franchise?: string | null;
+  franchise_id?: number | null;
   platform_code?: string | null;
 };
 
@@ -133,6 +134,7 @@ export async function updateBaccaratRow({
   duration,
   user_id,
   franchise,
+  franchise_id,
   platform_code,
 }: UpdateBaccaratPayload): Promise<void> {
   const supabase = await createClient2();
@@ -143,8 +145,11 @@ export async function updateBaccaratRow({
     target_profit,
   };
 
-  if (status !== undefined) {
-    updateData.status = status;
+  if (status !== undefined && status !== null) {
+    // Normalize status to title case (e.g., "idle" -> "Idle", "running" -> "Running")
+    updateData.status = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+  } else if (status === null) {
+    updateData.status = null;
   }
 
   if (command !== undefined) {
@@ -171,6 +176,10 @@ export async function updateBaccaratRow({
     updateData.franchise = franchise;
   }
 
+  if (franchise_id !== undefined) {
+    updateData.franchise_id = franchise_id;
+  }
+
   if (platform_code !== undefined) {
     updateData.platform_code = platform_code;
   }
@@ -194,7 +203,7 @@ export async function createBaccaratRow(payload: any): Promise<any[]> {
 
   const insertData = {
     pc_name: payload.pc_name,
-    status: payload.status,
+    status: payload.status ? (payload.status.charAt(0).toUpperCase() + payload.status.slice(1).toLowerCase()) : "Idle",
     level: payload.level,
     pattern: payload.pattern,
     target_profit: payload.target_profit,
@@ -203,6 +212,7 @@ export async function createBaccaratRow(payload: any): Promise<any[]> {
     duration: payload.duration,
     user_id: payload.user_id,
     franchise: payload.franchise,
+    franchise_id: payload.franchise_id ?? null,
   };
 
   const { data, error } = await supabase
@@ -219,3 +229,18 @@ export async function createBaccaratRow(payload: any): Promise<any[]> {
   return data || [];
 }
 
+export async function getFranchiseUnitCount(franchiseId: number): Promise<number> {
+  const supabase = await createClient2();
+  
+  const { count, error } = await supabase
+    .from("bot_monitoring")
+    .select("*", { count: 'exact', head: true })
+    .eq("franchise_id", franchiseId);
+    
+  if (error) {
+    console.error("Error fetching franchise unit count:", error);
+    return 0;
+  }
+  
+  return count || 0;
+}

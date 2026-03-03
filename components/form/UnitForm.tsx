@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { getBaccaratData, updateBaccaratRow, createBaccaratRow } from "@/helper/baccarat"
+import { getBaccaratData, updateBaccaratRow, createBaccaratRow, getFranchiseUnitCount } from "@/helper/baccarat"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
@@ -88,6 +88,7 @@ export function UnitForm({ initialData, onSuccess }: UnitFormProps) {
                     pc_name: formData.pc_name,
                     user_id: selectedAccount?.id || null,
                     franchise: selectedFranchise?.franchise_name || null,
+                    franchise_id: selectedFranchise?.db_id ? Number(selectedFranchise.db_id) : null,
                     // Preserve existing values or use defaults
                     level: initialData.level ?? 1,
                     pattern: initialData.pattern ?? "",
@@ -124,6 +125,7 @@ export function UnitForm({ initialData, onSuccess }: UnitFormProps) {
                     duration: 0,
                     user_id: selectedAccount?.id || null,
                     franchise: selectedFranchise?.franchise_name || null,
+                    franchise_id: selectedFranchise?.db_id ? Number(selectedFranchise.db_id) : null,
                 })
                 
                 if (!createdRows || createdRows.length === 0) {
@@ -156,7 +158,19 @@ export function UnitForm({ initialData, onSuccess }: UnitFormProps) {
                     <SearchableSelect
                         id="franchise"
                         value={selectedFranchise?.id || ""}
-                        onChange={(id) => setSelectedFranchise(franchises.find(f => f.id === id) || null)}
+                        onChange={async (id) => {
+                            const found = franchises.find(f => f.id === id) || null;
+                            setSelectedFranchise(found);
+                            if (found && found.franchise_code && found.db_id) {
+                                try {
+                                    const currentCount = await getFranchiseUnitCount(Number(found.db_id));
+                                    setFormData(prev => ({ ...prev, pc_name: `${found.franchise_code}-${currentCount + 1}` }));
+                                } catch (error) {
+                                    console.error("Error generating PC name:", error);
+                                    setFormData(prev => ({ ...prev, pc_name: found.franchise_code || "" }));
+                                }
+                            }
+                        }}
                         options={franchises.map(f => ({ 
                             value: f.id, 
                             label: f.franchise_name || "Unknown"

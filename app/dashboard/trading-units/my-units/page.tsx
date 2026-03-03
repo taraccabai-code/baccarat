@@ -11,7 +11,7 @@ export default async function MyUnitsPage() {
         id: item.id.toString(),
         unit_id: item.id.toString(),
         unit_name: item.units || item.pc_name || "Unknown PC",
-        status: item.status?.toLowerCase() || "disabled",
+        status: item.status || "disabled",
         balance: item.user_balance || item.balance,
         level: item.level,
         pattern: item.pattern,

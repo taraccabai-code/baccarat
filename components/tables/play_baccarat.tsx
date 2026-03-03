@@ -955,7 +955,7 @@ export const PlayBaccaratTable = ({
                                         onKeyDown={(e) => {
                                             if (e.key === "Enter") e.currentTarget.blur()
                                         }}
-                                        className="w-12 h-7 text-right text-xs text-gray-200 bg-transparent border-0 focus:outline-none focus:ring-0 p-0"
+                                        className="w-12 h-7 text-right text-xs text-gray-200 bg-transparent border-0 focus:outline-none focus:ring-0 p-0 underline"
                                     />
                                     <span className="text-gray-400">%</span>
                                 </div>
@@ -976,7 +976,7 @@ export const PlayBaccaratTable = ({
                                         onKeyDown={(e) => {
                                             if (e.key === "Enter") e.currentTarget.blur()
                                         }}
-                                        className="w-12 h-7 text-right text-xs text-gray-200 bg-transparent border-0 focus:outline-none focus:ring-0 p-0"
+                                        className="w-12 h-7 text-right text-xs text-gray-200 bg-transparent border-0 focus:outline-none focus:ring-0 p-0 underline"
                                     />
                                     <span className="text-gray-400">mins</span>
                                 </div>

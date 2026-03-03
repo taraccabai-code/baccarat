@@ -6,7 +6,7 @@ export async function getFranchises() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("franchise")
-    .select("franchise_name, franchise_code, investor_name, description")
+    .select("id, franchise_name, franchise_code, investor_name, description")
     .order("franchise_name", { ascending: true });
 
   if (error) {
@@ -15,8 +15,10 @@ export async function getFranchises() {
   }
   
   // Map franchise_name to id to maintain compatibility with existing components
+  // Keep the real DB id as db_id for foreign key references
   return (data || []).map(f => ({
       ...f,
+      db_id: f.id,
       id: f.franchise_name
   }));
 }

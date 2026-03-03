@@ -174,7 +174,7 @@ export const UnitsRealtime = React.forwardRef(({ initialData, searchQuery: exter
                                     ? `${unit.assigned_user.first_name || ""} ${unit.assigned_user.middle_name || ""} ${unit.assigned_user.last_name || ""}`.replace(/\s+/g, " ").trim()
                                     : (unit.franchise?.franchise_name || undefined)
                             }
-                            status={unit.status || "disabled"}
+                            status={unit.status || "Disabled"}
                             serial={unit.unit_id?.split("-")[0]?.toUpperCase() || "N/A"}
                             owner={
                                 unit.assigned_user 
