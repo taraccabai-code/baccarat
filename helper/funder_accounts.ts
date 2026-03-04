@@ -82,7 +82,7 @@ export async function createFunderAccount(formData: any) {
     }
   }
 
-  revalidatePath("/dashboard/trading-accounts/funder-accounts");
+  revalidatePath("/dashboard/baccarat-accounts/funder-accounts");
   return funderAccountData;
 }
 
@@ -97,7 +97,7 @@ export async function updateFunderAccount(id: string, formData: any) {
   if (error) {
     throw new Error(error.message);
   }
-  revalidatePath("/dashboard/trading-accounts/funder-accounts");
+  revalidatePath("/dashboard/baccarat-accounts/funder-accounts");
   return data;
 }
 
@@ -108,7 +108,7 @@ export async function deleteFunderAccount(id: string) {
   if (error) {
     throw new Error(error.message);
   }
-  revalidatePath("/dashboard/trading-accounts/funder-accounts");
+  revalidatePath("/dashboard/baccarat-accounts/funder-accounts");
   return true;
 }
 

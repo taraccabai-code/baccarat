@@ -53,24 +53,24 @@ const menuItems: MenuItem[] = [
     title: "Baccarat",
     icon: <Server className="w-4 h-4" />,
     children: [
-      { title: "Play Baccarat", href: "/dashboard/trade/play-baccarat" },
-      { title: "Play History", href: "/dashboard/trade/history" },
+      { title: "Play Baccarat", href: "/dashboard/baccarat/play-baccarat" },
+      { title: "Play History", href: "/dashboard/baccarat/history" },
     ],
   },
   {
     title: "Server Units",
     icon: <Package className="w-4 h-4" />,
     children: [
-      { title: "Server Units", href: "/dashboard/trading-units/my-units" },
+      { title: "Server Units", href: "/dashboard/units/my-units" },
     ],
   },
   {
     title: "Baccarat Accounts",
     icon: <CreditCard className="w-4 h-4" />,
     children: [
-      { title: "Account Credentials", href: "/dashboard/trading-accounts/credentials" },
-      { title: "User Accounts", href: "/dashboard/trading-accounts/user-accounts" },
-      { title: "Betting Platforms", href: "/dashboard/funders" },
+      { title: "Account Credentials", href: "/dashboard/baccarat-accounts/credentials" },
+      { title: "User Accounts", href: "/dashboard/baccarat-accounts/user-accounts" },
+      { title: "Betting Platforms", href: "/dashboard/betting-platforms" },
     ],
   },
 ];

@@ -44,7 +44,7 @@ export async function createAccount(formData: any) {
     console.error("Error creating account:", error);
     throw new Error(error.message);
   }
-  revalidatePath("/dashboard/trading-accounts/user-accounts");
+  revalidatePath("/dashboard/baccarat-accounts/user-accounts");
   return data;
 }
 
@@ -60,7 +60,7 @@ export async function updateAccount(id: string, formData: any) {
     console.error("Error updating account:", error);
     throw new Error(error.message);
   }
-  revalidatePath("/dashboard/trading-accounts/user-accounts");
+  revalidatePath("/dashboard/baccarat-accounts/user-accounts");
   return data;
 }
 
@@ -75,7 +75,7 @@ export async function deleteAccount(id: string) {
     console.error("Error deleting account:", error);
     throw new Error(error.message);
   }
-  revalidatePath("/dashboard/trading-accounts/user-accounts");
+  revalidatePath("/dashboard/baccarat-accounts/user-accounts");
   return true;
 }
 

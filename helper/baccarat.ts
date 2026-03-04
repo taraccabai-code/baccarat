@@ -195,7 +195,7 @@ export async function updateBaccaratRow({
     throw error;
   }
 
-  revalidatePath("/dashboard/trade/play-baccarat");
+  revalidatePath("/dashboard/baccarat/play-baccarat");
 }
 
 export async function createBaccaratRow(payload: any): Promise<any[]> {
@@ -225,7 +225,7 @@ export async function createBaccaratRow(payload: any): Promise<any[]> {
     throw error;
   }
 
-  revalidatePath("/dashboard/trade/play-baccarat");
+  revalidatePath("/dashboard/baccarat/play-baccarat");
   return data || [];
 }
 

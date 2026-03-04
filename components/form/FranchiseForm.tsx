@@ -86,7 +86,7 @@ export const FranchiseForm = ({ initialData }: FranchiseFormProps) => {
                 toast.success("Franchise created successfully")
             }
 
-            router.push("/dashboard/trading-units/my-units")
+            router.push("/dashboard/units/my-units")
             router.refresh()
         } catch (error: any) {
             console.error("Operation failed:", error)

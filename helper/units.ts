@@ -1,13 +1,14 @@
 "use server";
 
 import { createClient2 as createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 
 export async function getUnits() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("bot_monitoring")
     .select("*, franchise(*), user_account(*)")
-    .order("created_at", { ascending: false });
+    .order("id", { ascending: true });
 
   if (error) {
     console.error("Error fetching units:", error);
@@ -22,7 +23,7 @@ export async function getUnitsWithCounts() {
   const { data: units, error: unitsError } = await supabase
     .from("bot_monitoring")
     .select("*, assigned_user:user_id(*)")
-    .order("created_at", { ascending: false });
+    .order("id", { ascending: true });
 
   if (unitsError) {
     console.error("Error fetching units:", unitsError);
@@ -170,6 +171,7 @@ export async function createUnit(formData: any) {
   if (error) {
     throw new Error(error.message);
   }
+  revalidatePath("/dashboard/units/my-units");
   return data;
 }
 
@@ -184,6 +186,7 @@ export async function updateUnit(id: string, formData: any) {
   if (error) {
     throw new Error(error.message);
   }
+  revalidatePath("/dashboard/units/my-units");
   return data;
 }
 
@@ -194,6 +197,7 @@ export async function deleteUnit(id: string) {
   if (error) {
     throw new Error(error.message);
   }
+  revalidatePath("/dashboard/units/my-units");
   return true;
 }
 
@@ -208,6 +212,7 @@ export async function updateUnitStatus(id: string, status: string) {
   if (error) {
     throw new Error(error.message);
   }
+  revalidatePath("/dashboard/units/my-units");
   return data;
 }
 
