@@ -85,7 +85,7 @@ export function DashboardSidebar() {
           <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
             <span className="text-white font-black text-sm">H</span>
           </div>
-          <span className="text-white font-bold text-lg group-data-[collapsible=icon]:hidden">Harmony AI</span>
+          <span className="text-white font-bold text-lg group-data-[collapsible=icon]:hidden">Harmony V2</span>
         </div>
       </SidebarHeader>
       <SidebarContent className="py-4">

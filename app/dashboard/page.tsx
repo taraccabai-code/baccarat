@@ -106,7 +106,7 @@ async function UserCheck() {
               <div className="mt-1.5 h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)] flex-shrink-0" />
               <div className="space-y-1">
                 <p className="text-sm font-medium text-white">System initialized</p>
-                <p className="text-xs text-muted-foreground">Welcome to Harmony AI Trading Platform</p>
+                <p className="text-xs text-muted-foreground">Welcome to Harmony V2 Trading Platform</p>
               </div>
             </div>
 
