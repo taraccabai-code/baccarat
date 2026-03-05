@@ -20,7 +20,7 @@ import {
 import { PlayBaccaratTable, type BaccaratRow } from "@/components/tables/play_baccarat"
 import { createClient2 } from "@/lib/supabase/client"
 import { getBaccaratData, updateBaccaratRow } from "@/helper/baccarat"
-import { getFunders } from "@/helper/funders"
+import { getFranchises } from "@/helper/franchise"
 import { getPlatformWebsites } from "@/helper/platform_websites"
 
 const PlayBacarratPage = () => {
@@ -33,8 +33,8 @@ const PlayBacarratPage = () => {
     // IMPORTANT: Initialize Supabase client ONCE to prevent connection drops or duplicates
     const [supabase] = useState(() => createClient2())
 
-    const [funders, setFunders] = useState<any[]>([])
-    const [selectedFunder, setSelectedFunder] = useState("all")
+    const [franchises, setFranchises] = useState<any[]>([])
+    const [selectedFranchise, setSelectedFranchise] = useState("all")
     const [statusFilter, setStatusFilter] = useState("all")
     const [platforms, setPlatforms] = useState<{id: string | number; platform_code: string | null; text_color?: string | null; bg_color?: string | null}[]>([])
 
@@ -53,13 +53,13 @@ const PlayBacarratPage = () => {
     const fetchData = useCallback(async (showLoading = false) => {
         try {
             if (showLoading) setLoading(true)
-            const [baccaratData, fundersData, platformData] = await Promise.all([
+            const [baccaratData, franchisesData, platformData] = await Promise.all([
                 getBaccaratData(),
-                getFunders(),
+                getFranchises(),
                 getPlatformWebsites()
             ])
             setRows(baccaratData as BaccaratRow[])
-            setFunders(fundersData)
+            setFranchises(franchisesData)
             setPlatforms(platformData.map(p => ({
                 id: p.id,
                 platform_code: p.platform_code,
@@ -178,9 +178,9 @@ const PlayBacarratPage = () => {
     const filteredRows = useMemo(() => {
         let result = rows
 
-        // Funder Filter (pc_name mapping)
-        if (selectedFunder !== "all") {
-            result = result.filter(row => (row.units || "").toLowerCase().includes(selectedFunder.toLowerCase()))
+        // Franchise Filter (franchise_code mapping)
+        if (selectedFranchise !== "all") {
+            result = result.filter(row => row.franchise_code === selectedFranchise)
         }
 
         // Status Filter
@@ -221,7 +221,7 @@ const PlayBacarratPage = () => {
             }
             return true
         })
-    }, [rows, searchQuery, selectedFilter, selectedFunder, statusFilter])
+    }, [rows, searchQuery, selectedFilter, selectedFranchise, statusFilter])
 
     return (
         <div className="w-full h-full p-6">
@@ -289,15 +289,15 @@ const PlayBacarratPage = () => {
                     </div>
 
                     <div className="w-48">
-                        <Select value={selectedFunder} onValueChange={setSelectedFunder}>
+                        <Select value={selectedFranchise} onValueChange={setSelectedFranchise}>
                             <SelectTrigger className="w-full bg-[#0a0a0a] border-gray-800 text-white h-9">
-                                <SelectValue placeholder="Funder" />
+                                <SelectValue placeholder="Franchise" />
                             </SelectTrigger>
                             <SelectContent className="bg-[#1a1a1a] border-gray-800 text-white" position="popper" side="bottom">
                                 <SelectItem value="all">Franchise</SelectItem>
-                                {funders.map((funder) => (
-                                    <SelectItem key={funder.id} value={funder.name}>
-                                        {funder.name}
+                                {franchises.map((franchise) => (
+                                    <SelectItem key={franchise.db_id} value={franchise.franchise_code}>
+                                        {franchise.franchise_name}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
